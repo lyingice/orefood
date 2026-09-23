@@ -11,6 +11,7 @@ import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.component.CustomModelData;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -84,10 +85,15 @@ public final class OreFoodItems {
         ItemStack stack = new ItemStack(ORE_FOOD.get());
         stack.set(OreFoodComponents.DEFINITION.get(), definition);
         stack.set(DataComponents.ITEM_NAME, Component.translatable(nameKey(id)));
+        if (definition.modelData() > 0) {
+            // 1.21.1 没有 ITEM_MODEL 组件，外观只能靠 custom_model_data +
+            // 模型文件里的 overrides 列表来切（见 assets/orefood/models/item/ore_food.json）。
+            stack.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(definition.modelData()));
+        }
         return stack;
     }
 
-    /** @return 该定义对应的语言文件键，例如 {@code item.orefood.iron_steak}。 */
+    /** @return 该定义对应的语言文件键，例如 {@code item.orefood.iron_beef}。 */
     public static String nameKey(ResourceLocation id) {
         return "item." + id.getNamespace() + "." + id.getPath();
     }

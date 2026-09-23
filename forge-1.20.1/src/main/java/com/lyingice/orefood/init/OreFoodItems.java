@@ -96,10 +96,15 @@ public final class OreFoodItems {
         OreFoodDefinition.writeToStack(stack, definition);
         // 1.20.1 没有 ITEM_NAME 数据组件，自定义名称走 NBT 的 display.Name。
         stack.setHoverName(Component.translatable(nameKey(id)));
+        if (definition.modelData() > 0) {
+            // 1.20.1 也没有 ITEM_MODEL 组件，外观靠 NBT 的 CustomModelData +
+            // 模型文件里的 overrides 列表来切（见 assets/orefood/models/item/ore_food.json）。
+            stack.getOrCreateTag().putInt("CustomModelData", definition.modelData());
+        }
         return stack;
     }
 
-    /** @return 该定义对应的语言文件键，例如 {@code item.orefood.iron_steak}。 */
+    /** @return 该定义对应的语言文件键，例如 {@code item.orefood.iron_beef}。 */
     public static String nameKey(ResourceLocation id) {
         return "item." + id.getNamespace() + "." + id.getPath();
     }

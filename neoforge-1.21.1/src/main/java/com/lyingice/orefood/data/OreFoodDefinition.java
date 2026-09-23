@@ -20,7 +20,7 @@ import net.minecraft.util.ExtraCodecs;
  * 运行时再回注册表取值；因此数据包改一行数值、重进世界就会生效，
  * 已经发出去的同种牛排也跟着变。
  *
- * <p>JSON 示例（{@code data/<pack>/orefood/ore_food/iron_steak.json}）：
+ * <p>JSON 示例（{@code data/<pack>/orefood/ore_food/iron_beef.json}）：
  * <pre>{@code
  * {
  *   "nutrition": 8,
@@ -37,6 +37,7 @@ import net.minecraft.util.ExtraCodecs;
  * @param saturation       饱和度
  * @param durability       最大耐久；<b>0 表示无限耐久</b>（吃了不掉耐久）
  * @param enchantmentValue 附魔能力
+ * @param modelData        外观选择用的 custom_model_data 值；0 表示用默认模型
  * @param effects          食用后附带的状态效果，可为空
  */
 public record OreFoodDefinition(
@@ -44,6 +45,7 @@ public record OreFoodDefinition(
         float saturation,
         int durability,
         int enchantmentValue,
+        int modelData,
         List<PotionEffectSpec> effects) {
 
     /** 动态注册表的 id，条目就放在 {@code data/<pack>/orefood/ore_food/} 下。 */
@@ -56,6 +58,7 @@ public record OreFoodDefinition(
             Codec.FLOAT.optionalFieldOf("saturation", 0.0F).forGetter(OreFoodDefinition::saturation),
             ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("durability", 0).forGetter(OreFoodDefinition::durability),
             ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("enchantment_value", 0).forGetter(OreFoodDefinition::enchantmentValue),
+            ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("model_data", 0).forGetter(OreFoodDefinition::modelData),
             PotionEffectSpec.CODEC.listOf().optionalFieldOf("effects", List.of()).forGetter(OreFoodDefinition::effects)
     ).apply(instance, OreFoodDefinition::new));
 
@@ -70,6 +73,7 @@ public record OreFoodDefinition(
             ByteBufCodecs.FLOAT, OreFoodDefinition::saturation,
             ByteBufCodecs.VAR_INT, OreFoodDefinition::durability,
             ByteBufCodecs.VAR_INT, OreFoodDefinition::enchantmentValue,
+            ByteBufCodecs.VAR_INT, OreFoodDefinition::modelData,
             PotionEffectSpec.STREAM_CODEC.apply(ByteBufCodecs.list()), OreFoodDefinition::effects,
             OreFoodDefinition::new
     );
@@ -81,6 +85,6 @@ public record OreFoodDefinition(
 
     /** @return 一个空定义，用于注册表缺失时的兜底，避免各处判空。 */
     public static OreFoodDefinition empty() {
-        return new OreFoodDefinition(0, 0.0F, 0, 0, List.of());
+        return new OreFoodDefinition(0, 0.0F, 0, 0, 0, List.of());
     }
 }

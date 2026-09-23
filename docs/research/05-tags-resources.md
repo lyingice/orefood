@@ -339,7 +339,7 @@ NeoForge jar 与本 mod jar 同属一个数据包栈，两个同名标签文件�
 ```json
 {
   "values": [
-    "orefood:iron_steak"
+    "orefood:iron_beef"
   ]
 }
 ```
@@ -351,8 +351,8 @@ NeoForge jar 与本 mod jar 同属一个数据包栈，两个同名标签文件�
 {
   "replace": false,
   "values": [
-    "orefood:iron_steak",
-    "orefood:golden_steak",
+    "orefood:iron_beef",
+    "orefood:golden_beef",
     "#c:foods"
   ]
 }
@@ -367,7 +367,7 @@ NeoForge jar 与本 mod jar 同属一个数据包栈，两个同名标签文件�
 {
   "replace": false,
   "values": [
-    { "id": "orefood:iron_steak", "required": false },
+    { "id": "orefood:iron_beef", "required": false },
     { "id": "#c:foods", "required": false }
   ]
 }
@@ -863,16 +863,16 @@ public Component getFullname(int p_44701_) {
 
 ---
 
-## 6. 注册自定义物品（`orefood:iron_steak`）所需的资源/数据文件完整清单
+## 6. 注册自定义物品（`orefood:iron_beef`）所需的资源/数据文件完整清单
 
 通用命名规则（三版本一致，由 `Util.makeDescriptionId("item", id)` 决定）：
 
 | 用途 | 键 / id |
 |---|---|
-| 物品 id | `orefood:iron_steak`（注册名 `iron_steak`，全小写 + 下划线） |
-| 语言键 | `item.orefood.iron_steak` |
-| 模型引用 id | `orefood:item/iron_steak` |
-| 贴图 id | `orefood:item/iron_steak` |
+| 物品 id | `orefood:iron_beef`（注册名 `iron_beef`，全小写 + 下划线） |
+| 语言键 | `item.orefood.iron_beef` |
+| 模型引用 id | `orefood:item/iron_beef` |
+| 贴图 id | `orefood:item/iron_beef` |
 
 证据：1.21.1 `.mc-src/1.21.1/net/minecraft/world/item/Item.java:265-266`
 `this.descriptionId = Util.makeDescriptionId("item", BuiltInRegistries.ITEM.getKey(this));`；
@@ -883,17 +883,17 @@ public Component getFullname(int p_44701_) {
 
 | # | 文件（相对 `forge-1.20.1/src/main/resources/`，除非注明） | 内容 |
 |---|---|---|
-| 1 | `assets/orefood/models/item/iron_steak.json` | `{"parent":"minecraft:item/generated","textures":{"layer0":"orefood:item/iron_steak"}}` |
-| 2 | `assets/orefood/textures/item/iron_steak.png` | 16×16 PNG |
-| 3 | `assets/orefood/lang/en_us.json` | `"item.orefood.iron_steak": "Iron Steak"` |
-| 4 | `assets/orefood/lang/zh_cn.json` | `"item.orefood.iron_steak": "铁牛排"` |
+| 1 | `assets/orefood/models/item/iron_beef.json` | `{"parent":"minecraft:item/generated","textures":{"layer0":"orefood:item/iron_beef"}}` |
+| 2 | `assets/orefood/textures/item/iron_beef.png` | 16×16 PNG |
+| 3 | `assets/orefood/lang/en_us.json` | `"item.orefood.iron_beef": "Iron Beef"` |
+| 4 | `assets/orefood/lang/zh_cn.json` | `"item.orefood.iron_beef": "铁牛排"` |
 | 5 | `data/orefood/tags/items/<food_tag>.json` | **自建**食物标签（§1.3 方案 A），注意 **`items` 复数** |
 | 6 | （附魔）`java/.../init/ModEnchantments.java` | `Enchantment` 子类 + `canEnchant` 覆写 |
 | — | 不需要 `items/*.json` | 不存在这个概念 |
 
 **新增物品本体（1.20.1）**：
 ```java
-public static final RegistryObject<Item> IRON_STEAK = ITEMS.register("iron_steak",
+public static final RegistryObject<Item> IRON_BEEF = ITEMS.register("iron_beef",
         () -> new Item(new Item.Properties()
                 .food(new FoodProperties.Builder().nutrition(8).saturationMod(0.8F).build())));
 ```
@@ -903,18 +903,18 @@ public static final RegistryObject<Item> IRON_STEAK = ITEMS.register("iron_steak
 
 | # | 文件（相对 `neoforge-1.21.1/src/main/resources/`，除非注明） | 内容 |
 |---|---|---|
-| 1 | `assets/orefood/models/item/iron_steak.json` | 同 6.1 |
-| 2 | `assets/orefood/textures/item/iron_steak.png` | 同 6.1 |
+| 1 | `assets/orefood/models/item/iron_beef.json` | 同 6.1 |
+| 2 | `assets/orefood/textures/item/iron_beef.png` | 同 6.1 |
 | 3-4 | `assets/orefood/lang/{en_us,zh_cn}.json` | 同 6.1 |
 | 5 | `data/orefood/tags/item/<food_tag>.json` | **`item` 单数** |
-| 6 | `data/c/tags/item/foods.json`（**可选**） | 把 `orefood:iron_steak` 直接塞进 `c:foods` |
+| 6 | `data/c/tags/item/foods.json`（**可选**） | 把 `orefood:iron_beef` 直接塞进 `c:foods` |
 | 7 | （附魔）`data/orefood/enchantment/<id>.json` | `description` / `supported_items: "#c:foods"` / `primary_items` |
 | 8 | （附魔）lang 加 `"enchantment.orefood.<id>"` | |
 | — | 不需要 `items/*.json` | 1.21.1 仍用 `models/item` 自动映射 |
 
 **新增物品本体（1.21.1 风格，注意是 `FoodProperties` 而非 `food` 组件）**：
 ```java
-public static final DeferredItem<Item> IRON_STEAK = ITEMS.registerItem("iron_steak",
+public static final DeferredItem<Item> IRON_BEEF = ITEMS.registerItem("iron_beef",
         props -> new Item(props.food(new FoodProperties.Builder()
                 .nutrition(8).saturationModifier(0.8F).build())));
 ```
@@ -924,9 +924,9 @@ public static final DeferredItem<Item> IRON_STEAK = ITEMS.registerItem("iron_ste
 
 | # | 文件 | 内容 |
 |---|---|---|
-| 1 | `neoforge-26.1.2/src/main/resources/assets/orefood/items/iron_steak.json` | **26.1.2 新增，必须**：`{"model":{"type":"minecraft:model","model":"orefood:item/iron_steak"}}` |
-| 2 | `assets/orefood/models/item/iron_steak.json` | **仍需保留**（被 #1 引用） |
-| 3 | `assets/orefood/textures/item/iron_steak.png` | 同前 |
+| 1 | `neoforge-26.1.2/src/main/resources/assets/orefood/items/iron_beef.json` | **26.1.2 新增，必须**：`{"model":{"type":"minecraft:model","model":"orefood:item/iron_beef"}}` |
+| 2 | `assets/orefood/models/item/iron_beef.json` | **仍需保留**（被 #1 引用） |
+| 3 | `assets/orefood/textures/item/iron_beef.png` | 同前 |
 | 4-5 | `assets/orefood/lang/{en_us,zh_cn}.json` | 同前 |
 | 6 | `data/orefood/tags/item/<food_tag>.json` | **`item` 单数**（与 1.21.1 相同） |
 | 7 | `data/c/tags/item/foods.json`（可选） | 同 1.21.1 |
@@ -935,7 +935,7 @@ public static final DeferredItem<Item> IRON_STEAK = ITEMS.registerItem("iron_ste
 
 **新增物品本体（26.1.2）**：
 ```java
-public static final DeferredItem<Item> IRON_STEAK = ITEMS.registerItem("iron_steak",
+public static final DeferredItem<Item> IRON_BEEF = ITEMS.registerItem("iron_beef",
         props -> new Item(props.food(new FoodProperties.Builder()
                 .nutrition(8).saturationModifier(0.8F).build())));
 ```
@@ -1002,10 +1002,10 @@ assets/orefood/textures/item/example_item.png
 | 26.1.2 | `data/orefood/enchantment/<id>.json` | 同上，字段名未变 |
 
 **要不要额外建 `orefood:foods`？**
-- 只关心「原版 + 本模组的食物」→ 直接引 `#c:foods`，**不用**自建标签。但要把 `orefood:iron_steak` 加进
+- 只关心「原版 + 本模组的食物」→ 直接引 `#c:foods`，**不用**自建标签。但要把 `orefood:iron_beef` 加进
   `c:foods`，就得写增量文件 `data/c/tags/item/foods.json`。
 - 担心别的模组也写 `c:foods` 增量、或者想自己控制白名单 → 自建 `orefood:foods`，
-  内容 `{"values": ["#c:foods", "orefood:iron_steak", { "id": "#c:foods/dough", "required": false }]}`。
+  内容 `{"values": ["#c:foods", "orefood:iron_beef", { "id": "#c:foods/dough", "required": false }]}`。
 - **推荐后者**：附魔只依赖自己的标签，`c:foods` 只作为来源之一，互不干扰。
 
 ---

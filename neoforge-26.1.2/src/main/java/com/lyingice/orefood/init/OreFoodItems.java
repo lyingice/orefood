@@ -87,13 +87,17 @@ public final class OreFoodItems {
     /**
      * 按定义造一个矿物牛排物品栈。
      *
-     * @param id         定义 id，同时决定显示名（{@code item.<命名空间>.<路径>}）
+     * @param id         定义 id，同时决定显示名（{@code item.<命名空间>.<路径>}）与外观
      * @param definition 牛排定义
      */
     public static ItemStack stackFor(Identifier id, OreFoodDefinition definition) {
         ItemStack stack = new ItemStack(ORE_FOOD.get());
         stack.set(OreFoodComponents.DEFINITION.get(), definition);
         stack.set(DataComponents.ITEM_NAME, Component.translatable(nameKey(id)));
+        // 26.1.2 有原生的 ITEM_MODEL 组件，直接按定义 id 指向
+        // assets/orefood/items/<路径>.json —— 比 custom_model_data 分发直观得多，
+        // 也不需要数据包额外给出 model_data（那个字段是给 1.20.1 / 1.21.1 用的）。
+        stack.set(DataComponents.ITEM_MODEL, id);
         if (definition.enchantmentValue() > 0) {
             // Enchantable 的构造器要求 value > 0，所以 0 时不设组件。
             stack.set(DataComponents.ENCHANTABLE, new Enchantable(definition.enchantmentValue()));
@@ -101,7 +105,7 @@ public final class OreFoodItems {
         return stack;
     }
 
-    /** @return 该定义对应的语言文件键，例如 {@code item.orefood.iron_steak}。 */
+    /** @return 该定义对应的语言文件键，例如 {@code item.orefood.iron_beef}。 */
     public static String nameKey(Identifier id) {
         return "item." + id.getNamespace() + "." + id.getPath();
     }

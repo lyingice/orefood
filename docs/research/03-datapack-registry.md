@@ -435,10 +435,10 @@ prefix  = (rns == "minecraft") ? rpath : rns + "/" + rpath
 **对 `orefood:ore_food`**（`rns = "orefood"`，非 minecraft）→ `prefix = "orefood/ore_food"`：
 
 ```
-data/<pack_ns>/orefood/ore_food/iron_steak.json
-data/<pack_ns>/orefood/ore_food/gold_steak.json
-data/<pack_ns>/orefood/ore_food/diamond_steak.json
-data/<pack_ns>/orefood/ore_food/netherite_steak.json
+data/<pack_ns>/orefood/ore_food/iron_beef.json
+data/<pack_ns>/orefood/ore_food/golden_beef.json
+data/<pack_ns>/orefood/ore_food/diamond_beef.json
+data/<pack_ns>/orefood/ore_food/netherite_beef.json
 ```
 
 > 注意路径里出现**两次命名空间**：`data/` 后第一个是**数据包自己的命名空间**（可以不是 `orefood`，例如别的整合包在 `data/mypack/orefood/ore_food/...` 里追加定义），第二个 `orefood/` 来自**注册表 key 的命名空间**。
@@ -801,9 +801,9 @@ default Stream<ResourceKey<? extends Registry<?>>> listRegistryKeys() {         
 Registry<OreFoodDefinition> reg = server.registryAccess().registryOrThrow(OreFoodRegistries.ORE_FOOD);
 
 // 按 id 查（1.20.1）
-Optional<OreFoodDefinition> def = reg.getOptional(ResourceLocation.fromNamespaceAndPath("orefood", "iron_steak"));
+Optional<OreFoodDefinition> def = reg.getOptional(ResourceLocation.fromNamespaceAndPath("orefood", "iron_beef"));
 // 按 id 查（1.21.1）
-OreFoodDefinition def2 = reg.get(ResourceLocation.fromNamespaceAndPath("orefood", "iron_steak"));   // 可空
+OreFoodDefinition def2 = reg.get(ResourceLocation.fromNamespaceAndPath("orefood", "iron_beef"));   // 可空
 
 // 遍历全部
 reg.holders().forEach(h -> { ResourceKey<OreFoodDefinition> k = h.key(); OreFoodDefinition v = h.value(); });
@@ -818,10 +818,10 @@ reg.listElements().forEach(h -> ...);
 Registry<OreFoodDefinition> reg = server.registryAccess().lookupOrThrow(OreFoodRegistries.ORE_FOOD);
 
 // 按 id 查
-OreFoodDefinition def = reg.getValue(Identifier.fromNamespaceAndPath("orefood", "iron_steak"));   // 可空
-Optional<OreFoodDefinition> opt = reg.getOptional(Identifier.fromNamespaceAndPath("orefood", "iron_steak"));
+OreFoodDefinition def = reg.getValue(Identifier.fromNamespaceAndPath("orefood", "iron_beef"));   // 可空
+Optional<OreFoodDefinition> opt = reg.getOptional(Identifier.fromNamespaceAndPath("orefood", "iron_beef"));
 OreFoodDefinition must = reg.getValueOrThrow(ResourceKey.create(OreFoodRegistries.ORE_FOOD,
-        Identifier.fromNamespaceAndPath("orefood", "iron_steak")));
+        Identifier.fromNamespaceAndPath("orefood", "iron_beef")));
 
 // 遍历全部（holders() 已删，用 listElements()）
 reg.listElements().forEach(h -> { ResourceKey<OreFoodDefinition> k = h.key(); OreFoodDefinition v = h.value(); });
@@ -1377,7 +1377,7 @@ public class OreFood {
 **（c）数据文件**
 
 ```
-src/main/resources/data/orefood/orefood/ore_food/iron_steak.json
+src/main/resources/data/orefood/orefood/ore_food/iron_beef.json
 ```
 
 ```json
@@ -1395,7 +1395,7 @@ src/main/resources/data/orefood/orefood/ore_food/iron_steak.json
 // 在 ServerStartedEvent 或运行时
 Registry<OreFoodDefinition> reg = server.registryAccess().registryOrThrow(OreFoodRegistries.ORE_FOOD);
 
-OreFoodDefinition iron = reg.getOptional(ResourceLocation.fromNamespaceAndPath("orefood", "iron_steak")).orElse(null);
+OreFoodDefinition iron = reg.getOptional(ResourceLocation.fromNamespaceAndPath("orefood", "iron_beef")).orElse(null);
 if (iron == null) { /* 数据包未提供，走兜底 */ }
 
 // 遍历全部
@@ -1454,7 +1454,7 @@ public class OreFood {
 **（c）数据文件** —— 路径与 1.20.1 相同：
 
 ```
-src/main/resources/data/orefood/orefood/ore_food/iron_steak.json
+src/main/resources/data/orefood/orefood/ore_food/iron_beef.json
 ```
 
 **（d）读取**
@@ -1462,9 +1462,9 @@ src/main/resources/data/orefood/orefood/ore_food/iron_steak.json
 ```java
 Registry<OreFoodDefinition> reg = server.registryAccess().registryOrThrow(OreFoodRegistries.ORE_FOOD);
 
-OreFoodDefinition iron = reg.get(ResourceLocation.fromNamespaceAndPath("orefood", "iron_steak"));   // 可空
+OreFoodDefinition iron = reg.get(ResourceLocation.fromNamespaceAndPath("orefood", "iron_beef"));   // 可空
 Optional<Holder.Reference<OreFoodDefinition>> holder =
-        reg.getHolder(ResourceLocation.fromNamespaceAndPath("orefood", "iron_steak"));
+        reg.getHolder(ResourceLocation.fromNamespaceAndPath("orefood", "iron_beef"));
 
 reg.holders().forEach(h -> { ... });          // 或 reg.listElements()
 ```
@@ -1516,7 +1516,7 @@ public class OreFood {
 **（c）数据文件** —— 路径规则未变：
 
 ```
-src/main/resources/data/orefood/orefood/ore_food/iron_steak.json
+src/main/resources/data/orefood/orefood/ore_food/iron_beef.json
 ```
 
 **（d）读取（注意 `lookupOrThrow` / `getValue` / `listElements`）**
@@ -1524,10 +1524,10 @@ src/main/resources/data/orefood/orefood/ore_food/iron_steak.json
 ```java
 Registry<OreFoodDefinition> reg = server.registryAccess().lookupOrThrow(OreFoodRegistries.ORE_FOOD);
 
-OreFoodDefinition iron = reg.getValue(Identifier.fromNamespaceAndPath("orefood", "iron_steak"));    // 可空
-Optional<OreFoodDefinition> opt = reg.getOptional(Identifier.fromNamespaceAndPath("orefood", "iron_steak"));
+OreFoodDefinition iron = reg.getValue(Identifier.fromNamespaceAndPath("orefood", "iron_beef"));    // 可空
+Optional<OreFoodDefinition> opt = reg.getOptional(Identifier.fromNamespaceAndPath("orefood", "iron_beef"));
 OreFoodDefinition must = reg.getValueOrThrow(
-        ResourceKey.create(OreFoodRegistries.ORE_FOOD, Identifier.fromNamespaceAndPath("orefood", "iron_steak")));
+        ResourceKey.create(OreFoodRegistries.ORE_FOOD, Identifier.fromNamespaceAndPath("orefood", "iron_beef")));
 
 // 遍历：holders() 已删，只能 listElements()
 reg.listElements().forEach(h -> {
@@ -1898,7 +1898,7 @@ public interface BiomeModifier {
 | codec | 用途 | 何时需要 |
 |---|---|---|
 | `DIRECT_CODEC` | 元素**自身**在数据包 JSON 里的完整定义 | **必须有**（注册进 `dataPackRegistry` 的就是它） |
-| `REFERENCE_CODEC` | 在**别的**数据包文件里按 id 引用该条目（`RegistryFileCodec` / `RegistryFixedCodec`） | 若别处要引用 `orefood:iron_steak` 则需要 |
+| `REFERENCE_CODEC` | 在**别的**数据包文件里按 id 引用该条目（`RegistryFileCodec` / `RegistryFixedCodec`） | 若别处要引用 `orefood:iron_beef` 则需要 |
 | `LIST_CODEC` | 按 id 列表 / tag 引用（`RegistryCodecs.homogeneousList`） | 若需要 tag 支持则需要 |
 
 若 OreFood 的定义**不需要多态**（没有 `"type"` 字段区分多种食品类型），`DIRECT_CODEC` 用普通 `RecordCodecBuilder.create(...)` 即可（见 §4.4 的 `DamageType` / `JukeboxSong` 范例），无需 `dispatch`。

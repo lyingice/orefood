@@ -36,6 +36,9 @@ import net.minecraft.util.ExtraCodecs;
  * @param saturation       饱和度
  * @param durability       最大耐久；<b>0 表示无限耐久</b>（吃了不掉耐久）
  * @param enchantmentValue 附魔能力；26.1.2 通过 {@code minecraft:enchantable} 数据组件生效
+ * @param modelData        外观选择用的 custom_model_data 值；0 表示用默认模型
+ *                          （本版本实际靠 {@code ITEM_MODEL} 组件按定义 id 选模型，
+ *                          此字段仅为与 1.20.1 / 1.21.1 共用同一份 JSON 而保留）
  * @param effects          食用后附带的状态效果，可为空
  */
 public record OreFoodDefinition(
@@ -43,6 +46,7 @@ public record OreFoodDefinition(
         float saturation,
         int durability,
         int enchantmentValue,
+        int modelData,
         List<PotionEffectSpec> effects) {
 
     /** 动态注册表的 id，条目就放在 {@code data/<pack>/orefood/ore_food/} 下。 */
@@ -55,6 +59,7 @@ public record OreFoodDefinition(
             Codec.FLOAT.optionalFieldOf("saturation", 0.0F).forGetter(OreFoodDefinition::saturation),
             ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("durability", 0).forGetter(OreFoodDefinition::durability),
             ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("enchantment_value", 0).forGetter(OreFoodDefinition::enchantmentValue),
+            ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("model_data", 0).forGetter(OreFoodDefinition::modelData),
             PotionEffectSpec.CODEC.listOf().optionalFieldOf("effects", List.of()).forGetter(OreFoodDefinition::effects)
     ).apply(instance, OreFoodDefinition::new));
 
@@ -69,6 +74,7 @@ public record OreFoodDefinition(
             ByteBufCodecs.FLOAT, OreFoodDefinition::saturation,
             ByteBufCodecs.VAR_INT, OreFoodDefinition::durability,
             ByteBufCodecs.VAR_INT, OreFoodDefinition::enchantmentValue,
+            ByteBufCodecs.VAR_INT, OreFoodDefinition::modelData,
             PotionEffectSpec.STREAM_CODEC.apply(ByteBufCodecs.list()), OreFoodDefinition::effects,
             OreFoodDefinition::new
     );
@@ -80,6 +86,6 @@ public record OreFoodDefinition(
 
     /** @return 一个空定义，用于兜底，避免各处判空。 */
     public static OreFoodDefinition empty() {
-        return new OreFoodDefinition(0, 0.0F, 0, 0, List.of());
+        return new OreFoodDefinition(0, 0.0F, 0, 0, 0, List.of());
     }
 }
