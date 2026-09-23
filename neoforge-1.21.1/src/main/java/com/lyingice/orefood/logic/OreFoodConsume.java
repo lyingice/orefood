@@ -107,8 +107,10 @@ public final class OreFoodConsume {
      *   <li>耐久耗尽时的 {@code shrink} 与破坏回调。</li>
      * </ul>
      *
-     * <p>定义里 {@code durability == 0} 表示<b>无限耐久</b>，此时走原版路径
-     * （按普通食物消耗掉）——与 1.20.1 / 26.1.2 两个平台保持一致。
+     * <p>定义里 {@code durability == 0} 表示<b>没有耐久设定</b>：既不消耗耐久，
+     * 也<b>不消耗本体</b>——可以理解成「用不掉的矿物食物」，参考马铠
+     * （一个不设耐久的物品，装备它不会损耗它）。因为伤害值恒为 0，
+     * 这种物品也不会显示耐久条或「耐久 x/y」提示行（原版只在 {@code isDamaged()} 时才画）。
      *
      * @param stack  物品栈
      * @param amount 原版打算消耗的数量（通常是 1）
@@ -116,9 +118,13 @@ public final class OreFoodConsume {
      */
     public static void consume(ItemStack stack, int amount, LivingEntity entity) {
         OreFoodDefinition definition = OreFoodItem.definitionOf(stack);
-        if (definition == null || definition.infiniteDurability()) {
-            // 不是本模组的食物，或者声明了无限耐久：原样交还原版。
+        if (definition == null) {
+            // 不是本模组的食物：原样交还原版。
             stack.consume(amount, entity);
+            return;
+        }
+        if (definition.infiniteDurability()) {
+            // 没有耐久设定：吃多少次都不掉。
             return;
         }
         if (!(entity != null && entity.level() instanceof ServerLevel level)) {

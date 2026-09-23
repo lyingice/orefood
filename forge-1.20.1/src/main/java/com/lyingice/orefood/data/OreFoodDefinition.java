@@ -73,7 +73,10 @@ public record OreFoodDefinition(
             PotionEffectSpec.CODEC.listOf().optionalFieldOf("effects", List.of()).forGetter(OreFoodDefinition::effects)
     ).apply(instance, OreFoodDefinition::new));
 
-    /** @return 该定义是否为「无限耐久」——吃了不掉耐久，也就永不损坏。 */
+    /**
+     * @return 该定义是否「没有耐久设定」（{@code durability} 为 0）。
+     *         这种牛排既不消耗耐久，也<b>不消耗本体</b>——用不掉，参考马铠。
+     */
     public boolean infiniteDurability() {
         return this.durability <= 0;
     }

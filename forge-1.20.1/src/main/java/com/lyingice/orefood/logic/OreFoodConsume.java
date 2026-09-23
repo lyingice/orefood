@@ -101,9 +101,14 @@ public final class OreFoodConsume {
      * 所以原版食物与其它模组的物品行为完全不变。
      *
      * <p>扣耐久直接用 {@code ItemStack#hurtAndBreak} 而不是自己改 damage：
-     * 它内部已经处理好了「创造模式不消耗」「不可损坏物品」「耐久归零触发 onBroken
-     * 并减 1 个」这几件事，自己实现反而容易漏掉。注意它只在服务端生效，
-     * 这对我们是好事——消耗本来就该服务端权威。
+     * 它内部已经处理好了「创造模式不消耗」「不可损坏物品」「<b>耐久附魔</b>」
+     * 「耐久归零触发 onBroken 并减 1 个」这几件事，自己实现反而容易漏掉。
+     * 注意它只在服务端生效，这对我们是好事——消耗本来就该服务端权威。
+     *
+     * <p>定义里 {@code durability == 0} 表示<b>没有耐久设定</b>：既不消耗耐久，
+     * 也<b>不消耗本体</b>——可以理解成「用不掉的矿物食物」，参考马铠
+     * （一个不设耐久的物品，装备它不会损耗它）。因为伤害值恒为 0，
+     * 这种物品也不会显示耐久条或「耐久 x/y」提示行（原版只在 {@code isDamaged()} 时才画）。
      *
      * @param stack  物品栈
      * @param amount 原版打算消耗的数量（通常是 1）
@@ -111,8 +116,13 @@ public final class OreFoodConsume {
      */
     public static void consume(ItemStack stack, int amount, LivingEntity entity) {
         OreFoodDefinition definition = OreFoodItem.definitionOf(stack);
-        if (definition == null || definition.infiniteDurability()) {
+        if (definition == null) {
+            // 不是本模组的食物：原样交还原版。
             stack.shrink(amount);
+            return;
+        }
+        if (definition.infiniteDurability()) {
+            // 没有耐久设定：吃多少次都不掉。
             return;
         }
         if (entity == null) {

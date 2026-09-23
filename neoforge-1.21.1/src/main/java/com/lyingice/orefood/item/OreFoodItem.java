@@ -35,8 +35,9 @@ public class OreFoodItem extends Item {
     /**
      * 按定义给出最大耐久。
      *
-     * <p>定义里 {@code durability} 为 0 表示无限耐久，此时退回物品的默认值——
-     * 实际效果是「吃了不掉耐久」，永远不会损坏。
+     * <p>定义里 {@code durability} 为 0 表示<b>没有耐久设定</b>，此时退回物品的默认值。
+     * 那种牛排既不消耗耐久也不消耗本体（见 {@code OreFoodConsume#consume}），
+     * 所以这里的返回值不会被用到——伤害值恒为 0，耐久条与「耐久 x/y」提示行都不会出现。
      */
     @Override
     public int getMaxDamage(ItemStack stack) {

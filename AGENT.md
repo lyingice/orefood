@@ -284,8 +284,10 @@ this.tag(TRADEABLE).addTag(NON_TREASURE).add(...几个宝藏附魔);
 - **抗性提升固定 II 级（40%）** → `FoodEnchantmentRules#RESISTANCE_AMPLIFIER`
 - **持续时间 = 附魔等级 × 系数** → `FoodEnchantmentRules` 里那几个 duration 方法
 - **饱腹额外 等级×2 点饱食度** → `satietyBonus` / `satietyBonusSaturation`
-- **耐久 0 = 无限** → `OreFoodDefinition#infiniteDurability` + `OreFoodConsume#consume`
 - **吃完扣耐久而不是消失** → 三个平台的 `OreFoodConsume#consume`
+- **耐久 0 = 没有耐久设定（用不掉）** → `OreFoodDefinition#infiniteDurability`；
+  在 `consume` 里<b>直接 return</b>——既不扣耐久也不消耗本体，参考马铠。
+  注意不是「按普通食物吃掉」（这条曾经写错过，见 `docs/research/02-food-durability.md:4` 的原始口径）
 - **提示框显示药水效果** → `client/OreFoodTooltip`
 
 ---
