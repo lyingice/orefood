@@ -32,17 +32,14 @@ public final class OreFoodConsume {
     /**
      * 食用结算。必须在<b>服务端</b>调用（客户端调用会被本方法自行挡掉）。
      *
-     * <p><b>只处理本模组的物品</b>：Mixin 挂在原版的吃入口上，那个入口对
-     * <i>所有</i>可食用物品都会走一遍，因此这里必须先按物品类型挡一道，
-     * 否则原版食物（乃至其它模组的食物）也会被本模组的逻辑碰到。
+     * <p>Mixin 挂在原版的吃入口上，那个入口对<i>所有</i>可食用物品都会走一遍；
+     * 这里靠 {@code orefood:definition} 组件是否存在来判断「是不是本模组的食物」——
+     * 取不到定义就直接返回，原版食物与其它模组的物品因此完全不受影响。
      *
      * @param entity 吃下食物的生物
      * @param stack  被吃的那一份物品栈
      */
     public static void onConsume(LivingEntity entity, ItemStack stack) {
-        if (!(stack.getItem() instanceof OreFoodItem)) {
-            return;
-        }
         OreFoodDefinition definition = OreFoodItem.definitionOf(stack);
         if (definition == null || entity.level().isClientSide()) {
             return;
@@ -96,12 +93,12 @@ public final class OreFoodConsume {
      *
      * <p>这是 Mixin 在 {@code LivingEntity#eat} 里重定向 {@code ItemStack#consume} 的落点。
      *
-     * <p><b>只对本模组的物品生效</b>：这个方法是 Mixin 在
-     * {@code LivingEntity#eat} 里重定向 {@code ItemStack#consume} 的落点，
-     * 而那个调用点对<b>所有</b>可食用物品都会经过——所以第一件事就是按物品类型挡掉
-     * 非本模组的物品，原样交还给原版，绝不波及原版食物或其它模组的物品。
+     * <p>这个方法是 Mixin 在 {@code LivingEntity#eat} 里重定向 {@code ItemStack#consume}
+     * 的落点，而那个调用点对<b>所有</b>可食用物品都会经过。判断依据是
+     * {@code orefood:definition} 组件：取不到定义就原样交还原版，
+     * 所以原版食物与其它模组的物品行为完全不变。
      *
-     * <p>其次两个注意点：
+     * <p>另外两点：
      * <ul>
      *   <li>原版的「创造模式不消耗」守卫在 {@code ItemStack#consume} 内部，
      *       一旦被重定向就绕过了，所以我们自己这条分支必须补一次
@@ -114,11 +111,6 @@ public final class OreFoodConsume {
      * @param entity 食用者，可能为 null
      */
     public static void consume(ItemStack stack, int amount, LivingEntity entity) {
-        if (!(stack.getItem() instanceof OreFoodItem)) {
-            // 不是本模组的物品：完全交还原版，行为与没装这个模组时一模一样。
-            stack.consume(amount, entity);
-            return;
-        }
         OreFoodDefinition definition = OreFoodItem.definitionOf(stack);
         if (definition == null || definition.infiniteDurability()) {
             stack.consume(amount, entity);

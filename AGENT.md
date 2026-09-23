@@ -167,9 +167,11 @@ pwsh tools/decompile-forge-1.20.1.ps1  # 1.20.1：ForgeGradle 只缓存 class，
    `InvalidInjectionException: Invalid descriptor`。
    NeoForge 的 `:test` 任务会真正加载 Mixin，所以能抓到这类问题——**别跳过 test**。
 
-2. **消耗耐久必须按物品类型挡一道**。Mixin 挂在原版吃入口上，
+2. **消耗耐久的隔离靠「取不到定义就交还原版」**。Mixin 挂在原版吃入口上，
    那个入口对**所有**可食用物品都会经过。`OreFoodConsume#consume` 与 `#onConsume`
-   第一件事都是 `stack.getItem() instanceof OreFoodItem`，不是就直接交还原版。
+   都以 `OreFoodItem.definitionOf(stack) == null` 作为「不是本模组的食物」的判据，
+   取不到就直接 return 或走原版分支，因此原版食物与其它模组的物品行为完全不变。
+   （不需要再额外判 `instanceof OreFoodItem`——那个组件只有本模组的物品会带。）
 
 3. **1.20.1 的 DFU 版本只接受 `DataResult.error(Supplier<String>)`**，
    写 `error("字面量")` 编译失败。
