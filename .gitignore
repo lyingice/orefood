@@ -31,3 +31,5 @@ repo/
 Thumbs.db
 Desktop.ini
 .DS_Store
+# git commit -F 用的临时文件
+.git-commit-msg.tmp
