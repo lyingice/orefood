@@ -125,6 +125,12 @@ tasks.named('processResources', ProcessResources).configure {
 tasks.named('jar', Jar).configure {
     manifest {
         attributes([
+                // Mixin 配置必须在 JAR 清单里声明。
+                // Forge 1.20.1 的 mods.toml **不支持** [[mixins]] 字段（写了会被静默忽略，
+                // 官方 1.20.1 的元数据文档里也没有它），等价手段就是清单属性 MixinConfigs
+                // —— Mixin 自带的 MixinPlatformAgentDefault 会读它。
+                // 而 NeoForge 那边恰恰相反：必须在 neoforge.mods.toml 里写 [[mixins]]。
+                'MixinConfigs'            : "${mod_id}.mixins.json",
                 'Specification-Title'     : mod_id,
                 'Specification-Vendor'    : mod_authors,
                 'Specification-Version'   : '1',

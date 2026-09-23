@@ -1,39 +1,36 @@
 package com.lyingice.orefood.neoforge;
 
 import com.lyingice.orefood.OreFoodConstants;
+import com.lyingice.orefood.data.OreFoodDefinition;
+import com.lyingice.orefood.init.OreFoodComponents;
 import com.lyingice.orefood.init.OreFoodItems;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.registries.DataPackRegistryEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * NeoForge / Minecraft 26.1.2 的模组入口。
  *
- * <p>NeoForge 允许在 {@code @Mod} 构造器上直接注入 {@link IEventBus}；
- * 物品注册表（{@link OreFoodItems}）就挂在这个总线上。Forge 1.20.1 没有这个便利，
- * 只能从 {@code FMLJavaModLoadingContext} 取总线。
- *
- * <p>26.1.2 与 1.21.1 的两处硬性差异（都已在构建侧处理好，本类只需知道）：
- *
+ * <p>这里只做装配，业务逻辑分别在：
  * <ul>
- *   <li>数据生成 run type 改名为 {@code clientData} / {@code serverData}
- *       （见 {@code build.gradle} 的 runs 段）；继续写 {@code data()} 只会在运行期报
- *       "Trying to prepare unknown run: data"；</li>
- *   <li>{@code FMLEnvironment.dist} 字段改为方法 {@code FMLEnvironment.getDist()}，
- *       {@code ResourceLocation} 改名为 {@code Identifier}。</li>
+ *   <li>{@link OreFoodItems}：唯一的物品 {@code orefood:ore_food}；</li>
+ *   <li>{@link OreFoodComponents}：携带牛排定义的数据组件；</li>
+ *   <li>{@code com.lyingice.orefood.logic.OreFoodConsume} 配合
+ *       {@code com.lyingice.orefood.mixin.ConsumableMixin}：食用结算与耐久消耗；</li>
+ *   <li>{@code com.lyingice.orefood.client.OreFoodTooltip}：提示框。</li>
  * </ul>
  *
- * <p>另外注意：编译期常量会被 javac 内联，所以引用别处的
- * {@code public static final String} 常量<b>不会</b>触发那个类的加载 ——
- * 这正是「只引用一个常量」在专用服务端上安全、而「调用一个方法」不安全的原因。
-
+ * <p>注意 26.1.2 里 {@code DataPackRegistryEvent} 的包名与三个
+ * {@code dataPackRegistry} 重载<b>和 1.21.1 逐字相同</b>——它没有跟着
+ * {@code ResourceLocation} 一起改名，唯一的变化在内部
+ * （{@code RegistryData} 的第三个参数从 {@code false} 变成了 {@code RegistryValidator.none()}）。
+ *
  * <p><b>本类绝不能直接引用任何客户端专属类。</b>NeoForge 没有 Forge 1.20.1 的
- * {@code clientSideOnly} 开关，{@code @Mod} 类在专用服务端上照样会被加载；
+ * {@code clientSideOnly} 开关，{@code @Mod} 类在专用服务端上照样被加载；
  * 一旦解析到建立在 {@code @OnlyIn(Dist.CLIENT)} 之上的类，就会抛
  * {@code Attempted to load class ... for invalid dist DEDICATED_SERVER}。
- * 因此客户端专属的装配必须封进一个单独的类，并且只在 Dist.CLIENT 分支里调用它
- * —— 服务端不进入该分支，JVM 的懒解析就不会加载那个类。
  */
 @Mod(OreFoodConstants.MOD_ID)
 public final class OreFoodNeoForge {
@@ -41,9 +38,18 @@ public final class OreFoodNeoForge {
     public static final Logger LOGGER = LoggerFactory.getLogger(OreFoodConstants.MOD_NAME);
 
     public OreFoodNeoForge(IEventBus modEventBus) {
-        // 物品注册表必须挂到 mod 事件总线，DeferredRegister 才会真正注册。
         OreFoodItems.register(modEventBus);
-        // 把示例物品接进创造模式标签页（见 OreFoodItems#addToCreativeTab）。
+        OreFoodComponents.register(modEventBus);
+
+        // 自定义动态注册表：牛排定义由数据包写在 data/<pack>/orefood/ore_food/*.json。
+        // 第三个参数是「网络 codec」——类型是 Codec 而不是 StreamCodec（原版同步走 NBT）。
+        // 提供它就意味着「客户端也必须装本模组」，创造模式标签页才能在客户端读到定义。
+        modEventBus.addListener((DataPackRegistryEvent.NewRegistry event) -> event.dataPackRegistry(
+                OreFoodDefinition.REGISTRY_KEY,
+                OreFoodDefinition.CODEC,
+                OreFoodDefinition.CODEC));
+
+        // 让数据包里定义的每一种牛排都出现在创造模式「食物与饮品」页。
         modEventBus.addListener(OreFoodItems::addToCreativeTab);
 
         LOGGER.info("{} v{} initialized on NeoForge (Minecraft 26.1.2); shared package {}",
