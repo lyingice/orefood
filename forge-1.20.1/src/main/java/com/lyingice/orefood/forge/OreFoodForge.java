@@ -5,6 +5,7 @@ import com.lyingice.orefood.data.OreFoodDefinition;
 import com.lyingice.orefood.init.OreFoodEnchantments;
 import com.lyingice.orefood.init.OreFoodItems;
 import net.minecraft.core.Registry;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -62,11 +63,31 @@ public final class OreFoodForge {
             Registry<OreFoodDefinition> registry = event.getServer().registryAccess()
                     .registryOrThrow(OreFoodDefinition.REGISTRY_KEY);
             LOGGER.info("Loaded {} ore food definition(s): {}", registry.size(), registry.keySet());
+            logEnchantmentEntries();
         });
 
         LOGGER.info("{} v{} initialized on Forge (Minecraft 1.20.1); shared package {}",
                 OreFoodConstants.MOD_NAME,
                 OreFoodConstants.MOD_VERSION,
                 OreFoodConstants.PACKAGE_ROOT);
+    }
+
+    /**
+     * 启动自检：打印每个食物附魔在三个入口上的开关状态。
+     *
+     * <p>1.21 起这些开关改由数据包标签表达（{@code in_enchanting_table} /
+     * {@code tradeable} / {@code treasure}）；1.20.1 没有那套标签，
+     * 靠 {@code FoodEnchantment} 覆写下面三个方法实现，这里把结果打出来便于核对。
+     * 写错的后果是<b>静默</b>的——附魔会安静地哪都拿不到，不会报错。
+     */
+    private static void logEnchantmentEntries() {
+        for (OreFoodEnchantments.Entry entry : OreFoodEnchantments.entries()) {
+            Enchantment enchantment = entry.enchantment().get();
+            LOGGER.info("  {} -> discoverable={}, tradeable={}, treasure={}",
+                    entry.id(),
+                    enchantment.isDiscoverable(),
+                    enchantment.isTradeable(),
+                    enchantment.isTreasureOnly());
+        }
     }
 }

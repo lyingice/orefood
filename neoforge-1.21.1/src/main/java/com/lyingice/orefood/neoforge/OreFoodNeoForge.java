@@ -1,10 +1,16 @@
 package com.lyingice.orefood.neoforge;
 
+import com.lyingice.orefood.FoodEnchantment;
 import com.lyingice.orefood.OreFoodConstants;
 import com.lyingice.orefood.data.OreFoodDefinition;
 import com.lyingice.orefood.init.OreFoodComponents;
 import com.lyingice.orefood.init.OreFoodItems;
+import java.util.stream.Collectors;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
@@ -58,11 +64,41 @@ public final class OreFoodNeoForge {
             Registry<OreFoodDefinition> registry = event.getServer().registryAccess()
                     .registryOrThrow(OreFoodDefinition.REGISTRY_KEY);
             LOGGER.info("Loaded {} ore food definition(s): {}", registry.size(), registry.keySet());
+            logEnchantmentEntries(event);
         });
 
         LOGGER.info("{} v{} initialized on NeoForge (Minecraft 1.21.1); shared package {}",
                 OreFoodConstants.MOD_NAME,
                 OreFoodConstants.MOD_VERSION,
                 OreFoodConstants.PACKAGE_ROOT);
+    }
+
+    /**
+     * 启动自检：打印每个食物附魔实际挂在哪些原版附魔标签下。
+     *
+     * <p>1.21 起「能不能在附魔台刷出 / 能不能交易 / 会不会出现在战利品里」
+     * <b>完全由数据包标签决定</b>（{@code in_enchanting_table} / {@code tradeable} /
+     * {@code on_random_loot}），而这些标签是「非宝藏附魔 + 少数宝藏附魔」的组合，
+     * 写错了不会有任何报错——附魔会安静地哪都拿不到。有这么一行就能立刻看出来。
+     *
+     * <p>最关键的是每个非宝藏附魔身上必须出现 {@code non_treasure}：
+     * 原版的 {@code in_enchanting_table} / {@code tradeable} / {@code on_random_loot}
+     * 都是<b>引用</b> {@code #minecraft:non_treasure} 的，进了它就等于全都有了。
+     */
+    private static void logEnchantmentEntries(ServerStartedEvent event) {
+        Registry<Enchantment> enchantments = event.getServer().registryAccess()
+                .registryOrThrow(Registries.ENCHANTMENT);
+        for (FoodEnchantment spec : FoodEnchantment.values()) {
+            ResourceKey<Enchantment> key = ResourceKey.create(
+                    Registries.ENCHANTMENT,
+                    ResourceLocation.fromNamespaceAndPath(OreFoodConstants.MOD_ID, spec.path()));
+            String tags = enchantments.getHolder(key)
+                    .map(holder -> holder.tags()
+                            .map(tag -> tag.location().getPath())
+                            .sorted()
+                            .collect(Collectors.joining(", ")))
+                    .orElse("<NOT REGISTERED>");
+            LOGGER.info("  {} -> [{}]", spec.fullId(), tags);
+        }
     }
 }

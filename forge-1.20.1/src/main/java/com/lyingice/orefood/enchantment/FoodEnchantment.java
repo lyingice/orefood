@@ -33,17 +33,36 @@ public class FoodEnchantment extends Enchantment {
         return this.maxLevel;
     }
 
-    /** 宝藏附魔（仅「盛宴」）：只能从战利品、交易等途径获得，不出现在附魔台上。 */
+    /**
+     * 宝藏附魔（仅「盛宴」）：不出现在附魔台。
+     *
+     * <p>1.20.1 的附魔是静态注册的，没有 1.21+ 那套数据包标签，
+     * 「能不能附魔台出 / 能不能交易」全靠覆写本类这几个方法表达。
+     * 与 1.21.1 / 26.1.2 侧标签的对应关系：
+     * <ul>
+     *   <li>{@code isTreasureOnly()} ↔ {@code #minecraft:treasure}</li>
+     *   <li>{@code isDiscoverable()} ↔ {@code #minecraft:in_enchanting_table}</li>
+     *   <li>{@code isTradeable()} ↔ {@code #minecraft:tradeable}</li>
+     * </ul>
+     */
     @Override
     public boolean isTreasureOnly() {
         return this.treasure;
     }
 
+    /**
+     * 所有食物附魔都可交易——宝藏附魔也一样。
+     *
+     * <p>对照原版：{@code mending} 是宝藏附魔，但图书管理员照卖不误；
+     * 1.21+ 的 {@code #minecraft:tradeable} 标签正是「非宝藏附魔 + 少数几个宝藏附魔」。
+     * 本模组的「盛宴」也列在那个标签里，所以这里必须返回 {@code true}。
+     */
     @Override
     public boolean isTradeable() {
-        return !this.treasure;
+        return true;
     }
 
+    /** 只有非宝藏附魔能在附魔台刷出来。 */
     @Override
     public boolean isDiscoverable() {
         return !this.treasure;

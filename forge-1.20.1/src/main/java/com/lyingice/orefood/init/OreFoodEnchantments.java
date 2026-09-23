@@ -2,7 +2,9 @@ package com.lyingice.orefood.init;
 
 import com.lyingice.orefood.FoodEnchantment;
 import com.lyingice.orefood.OreFoodConstants;
+import java.util.List;
 import java.util.function.Predicate;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentCategory;
@@ -56,6 +58,31 @@ public final class OreFoodEnchantments {
     /** 盛宴：饱和效果（宝藏附魔），最大 3 级。 */
     public static final RegistryObject<Enchantment> FEAST =
             register(FoodEnchantment.FEAST);
+
+    /**
+     * 附魔 id 与注册对象的配对，供启动自检遍历用。
+     *
+     * <p>注意声明顺序：必须排在五个注册对象之后，否则静态初始化时拿到的是 null。
+     */
+    private static final List<Entry> ENTRIES = List.of(
+            new Entry(id(FoodEnchantment.POWERFUL_RECOVERY), POWERFUL_RECOVERY),
+            new Entry(id(FoodEnchantment.ADRENALINE), ADRENALINE),
+            new Entry(id(FoodEnchantment.FITNESS), FITNESS),
+            new Entry(id(FoodEnchantment.SATIETY), SATIETY),
+            new Entry(id(FoodEnchantment.FEAST), FEAST));
+
+    /** @return 五个附魔的 id 与注册对象的配对。 */
+    public static List<Entry> entries() {
+        return ENTRIES;
+    }
+
+    /** 一对「附魔 id + 注册对象」。 */
+    public record Entry(ResourceLocation id, RegistryObject<Enchantment> enchantment) {
+    }
+
+    private static ResourceLocation id(FoodEnchantment spec) {
+        return new ResourceLocation(OreFoodConstants.MOD_ID, spec.path());
+    }
 
     private static Predicate<Item> isEdible() {
         return Item::isEdible;

@@ -92,8 +92,37 @@ pwsh tools/decompile-forge-1.20.1.ps1  # 1.20.1：ForgeGradle 只缓存 class，
 | 形态 | `abstract class Enchantment` | `record Enchantment` | 同 1.21.1 |
 | 注册 | `DeferredRegister` + `ForgeRegistries.ENCHANTMENTS` | 数据包 `data/orefood/enchantment/*.json` | 同 1.21.1 |
 | 「只对食物生效」 | `EnchantmentCategory.create(..., Item::isEdible)` | `"supported_items": "#c:foods"` | 同 1.21.1 |
-| 宝藏 | 覆写 `isTreasureOnly()` | `#minecraft:treasure` 标签 | 同 1.21.1 |
+| 获取途径 | 覆写 `isTreasureOnly()` / `isDiscoverable()` / `isTradeable()` | 数据包附魔标签（见下） | 同 1.21.1 |
 | 等级读取 | `EnchantmentHelper.getItemEnchantmentLevel(Enchantment, ItemStack)` | `stack.getEnchantmentLevel(Holder<Enchantment>)` | 同 1.21.1 |
+
+#### 附魔的获取途径（1.21+ 全靠标签，漏了就是「哪都拿不到」）
+
+原版的 `VanillaEnchantmentTagsProvider` 是这么组织的：
+
+```java
+this.tag(DOUBLE_TRADE_PRICE).addTag(TREASURE);
+this.tag(IN_ENCHANTING_TABLE).addTag(NON_TREASURE);
+this.tag(ON_MOB_SPAWN_EQUIPMENT).addTag(NON_TREASURE);
+this.tag(ON_TRADED_EQUIPMENT).addTag(NON_TREASURE);
+this.tag(ON_RANDOM_LOOT).addTag(NON_TREASURE).add(...几个宝藏附魔);
+this.tag(TRADEABLE).addTag(NON_TREASURE).add(...几个宝藏附魔);
+```
+
+也就是说 **`in_enchanting_table` / `tradeable` / `on_random_loot` / `on_mob_spawn_equipment` /
+`on_traded_equipment` 全部引用 `#minecraft:non_treasure`**。所以：
+
+- **非宝藏附魔** → 只需写进 `data/minecraft/tags/enchantment/non_treasure.json`，其余途径自动全有；
+- **宝藏附魔** → 写进 `treasure.json`（自动获得 `double_trade_price`，且不出现在附魔台），
+  想让它是战利品/交易能拿到的（像原版 `mending`），再显式写进 `on_random_loot.json` 与 `tradeable.json`。
+
+消费点：`EnchantmentMenu`（附魔台）读 `IN_ENCHANTING_TABLE`，
+`VillagerTrades` 读 `TRADEABLE`，`EnchantRandomlyFunction` / `EnchantWithLevelsFunction` 读 `ON_RANDOM_LOOT`。
+
+**1.20.1 没有这套标签**（`EnchantmentTags` 类在该版本不存在），
+改用覆写 `isDiscoverable()`（附魔台）、`isTradeable()`（`VillagerTrades` 用
+`Enchantment::isTradeable` 过滤）、`isTreasureOnly()`。
+
+启动时会打印每个附魔实际挂到的标签，写错了看一眼日志就知道（见「踩坑清单」）。
 
 > **1.21.1 / 26.1.2 没有任何一个附魔效果组件以「物品被吃下」为触发点**
 > （30 / 31 个组件全查过，唯一沾边的 `minecraft:tick` 只扫装备槽位）。
@@ -173,7 +202,15 @@ pwsh tools/decompile-forge-1.20.1.ps1  # 1.20.1：ForgeGradle 只缓存 class，
    取不到就直接 return 或走原版分支，因此原版食物与其它模组的物品行为完全不变。
    （不需要再额外判 `instanceof OreFoodItem`——那个组件只有本模组的物品会带。）
 
-3. **1.20.1 的 DFU 版本只接受 `DataResult.error(Supplier<String>)`**，
+3. **新附魔必须自己写进附魔标签，否则「哪都拿不到」**。1.21+ 的附魔台 / 交易 / 战利品
+   完全由数据包标签决定，原版对这些标签的默认内容里**没有**你的附魔。
+   漏写的后果是静默的：附魔能注册、能通过命令附上、效果也正常，但附魔台刷不出、
+   村民不卖、战利品里也永远不掉。非宝藏附魔写进 `non_treasure` 就够了
+   （其余标签都引用它）；宝藏附魔还要额外写进 `on_random_loot` / `tradeable`
+   才能像原版 `mending` 那样拿到。1.20.1 没有这套标签，靠覆写方法。
+   启动日志会把每个附魔实际挂到的标签打出来，照它核对。
+
+4. **1.20.1 的 DFU 版本只接受 `DataResult.error(Supplier<String>)`**，
    写 `error("字面量")` 编译失败。
 
 4. **动态注册表路径是 `data/<pack_ns>/orefood/ore_food/`**——命名空间出现两次。
