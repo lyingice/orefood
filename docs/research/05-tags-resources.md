@@ -725,24 +725,24 @@ Compare-Object $a $b
    但 1.21.1 的模组实践中物品贴图进 blocks 图集是既定事实。）
 
 **项目现状对照**：
-`neoforge-26.1.2/src/main/resources/assets/template/items/example_item.json`
+`neoforge-26.1.2/src/main/resources/assets/orefood/items/example_item.json`
 ```json
 {
   "model": {
     "type": "minecraft:model",
-    "model": "template:item/example_item"
+    "model": "orefood:item/example_item"
   }
 }
 ```
-配套模型在共享层：`common/src/main/resources/assets/template/models/item/example_item.json`
+配套模型在共享层：`common/src/main/resources/assets/orefood/models/item/example_item.json`
 ```json
 {
   "parent": "minecraft:item/generated",
-  "textures": { "layer0": "template:item/example_item" }
+  "textures": { "layer0": "orefood:item/example_item" }
 }
 ```
 → **这套分层是对的**：`items/<id>.json` 只放 26.1.2 模块，`models/item/<id>.json` + 贴图 + lang 放共享层。
-`neoforge-26.1.2/src/main/java/com/lyingice/template/init/TemplateItems.java:30-34`
+`neoforge-26.1.2/src/main/java/com/lyingice/orefood/init/OreFoodItems.java:30-34`
 的类注释也明确写了这一点。
 
 ---
@@ -958,10 +958,10 @@ Builder 在 `:51-73`（`nutrition(int)` / `saturationModifier(float)`）。
 
 `common/src/main/resources/` 现有内容（就是「平台无关」的样板）：
 ```
-assets/template/lang/en_us.json
-assets/template/lang/zh_cn.json
-assets/template/models/item/example_item.json
-assets/template/textures/item/example_item.png
+assets/orefood/lang/en_us.json
+assets/orefood/lang/zh_cn.json
+assets/orefood/models/item/example_item.json
+assets/orefood/textures/item/example_item.png
 ```
 
 **分层规则表**：
@@ -977,7 +977,7 @@ assets/template/textures/item/example_item.png
 | `data/<ns>/enchantment/*.json` | **仅 1.21.1 与 26.1.2**（可放共享层） | 1.20.1 没有数据驱动附魔，这份数据对它是垃圾 |
 | `pack.mcmeta` | 1.20.1 → `src/main/resources/`；1.21.1/26.1.2 → `src/main/templates/` | 平台格式号不同，不能共享 |
 | `META-INF/mods.toml` / `neoforge.mods.toml` | 同上 | |
-| 物品/附魔的 Java 注册代码 | **各平台模块各自一份** | `DeferredRegister` vs `RegistryObject`、`createItems` vs `create`、`putAfter` vs `insertAfter`（见 `forge-1.20.1/.../TemplateItems.java:22-32` 与 `neoforge-1.21.1/.../TemplateItems.java:14-28` 的对照注释） |
+| 物品/附魔的 Java 注册代码 | **各平台模块各自一份** | `DeferredRegister` vs `RegistryObject`、`createItems` vs `create`、`putAfter` vs `insertAfter`（见 `forge-1.20.1/.../OreFoodItems.java:22-32` 与 `neoforge-1.21.1/.../OreFoodItems.java:14-28` 的对照注释） |
 
 **推荐做法（为了「一处改，三处生效」且不误导）**：
 1. `common/src/main/resources/` 放：`lang/`、`textures/item/`、`models/item/`。

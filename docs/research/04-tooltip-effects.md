@@ -1063,13 +1063,13 @@ public static final MobEffect SATURATION = register(23, "saturation", new Instan
 | `DistExecutor.unsafeRunForDist(...)` | `net/minecraftforge/fml/core/ModStateProvider.java:46` |
 | `FMLEnvironment.dist == Dist.CLIENT` | `net/minecraftforge/fluids/FluidType.java:336`；`net/minecraftforge/common/CreativeModeTabRegistry.java:218`；`net/minecraftforge/common/TierSortingRegistry.java:171`；`net/minecraftforge/common/MinecraftForge.java:31` |
 
-项目里现有的 `mods.toml` 注释也提到了 `clientSideOnly=true`（`forge-1.20.1/src/main/resources/META-INF/mods.toml`，见 `forge-1.20.1/src/main/java/com/lyingice/template/forge/TemplateForge.java:17-19` 的说明）。
+项目里现有的 `mods.toml` 注释也提到了 `clientSideOnly=true`（`forge-1.20.1/src/main/resources/META-INF/mods.toml`，见 `forge-1.20.1/src/main/java/com/lyingice/orefood/forge/OreFoodForge.java:17-19` 的说明）。
 
 **推荐写法（游戏总线的客户端监听）**：
 
 ```java
 // Forge 1.20.1
-@Mod.EventBusSubscriber(modid = TemplateConstants.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = OreFoodConstants.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class ForgeClientTooltips {
     @SubscribeEvent
     public static void onItemTooltip(ItemTooltipEvent event) {   // net.minecraftforge.event.entity.player.ItemTooltipEvent
@@ -1083,7 +1083,7 @@ public final class ForgeClientTooltips {
 ### 7.3 NeoForge（1.21.1 与 26.1.2）
 
 **NeoForge 没有 `DistExecutor`**：`path=.mc-src/26.1.2/net/neoforged` 全树 grep `DistExecutor` **0 命中**（同一次检索里 `OnlyIn` 有 11 命中，全部来自 `common/OnlyInWarningsHandler.java`——那是**警告**你用 `@OnlyIn` 的类：`OnlyInWarningsHandler.java:39` 明确写着 `the runtime member-stripping behaviour of this annotation is no longer present`）。
-NeoForge 也没有 `clientSideOnly` 这种清单开关（项目 `TemplateNeoForge.java:31-36` 的注释已经把这条总结过）。
+NeoForge 也没有 `clientSideOnly` 这种清单开关（项目 `OreFoodNeoForge.java:31-36` 的注释已经把这条总结过）。
 
 **树内可引用的用法证据（26.1.2）**：
 
@@ -1095,7 +1095,7 @@ NeoForge 也没有 `clientSideOnly` 这种清单开关（项目 `TemplateNeoForg
 | `FMLEnvironment.isProduction()` | 多处（例如 `common/util/SelfTest.java:35`） |
 
 **两个必须注意的 26.1.2 差异**：
-1. **`FMLEnvironment.dist` 字段 → `FMLEnvironment.getDist()` 方法**（`CommonModLoader.java:61` 用的是 `getDist()`；项目注释 `TemplateNeoForge.java:23-24` 也已记录此改动）。
+1. **`FMLEnvironment.dist` 字段 → `FMLEnvironment.getDist()` 方法**（`CommonModLoader.java:61` 用的是 `getDist()`；项目注释 `OreFoodNeoForge.java:23-24` 也已记录此改动）。
 2. `@EventBusSubscriber` 在树内实例全部不带 `bus = ...` 参数（默认游戏总线），例如 `ClientPayloadHandler.java:61` 只有 `(modid = ..., value = Dist.CLIENT)`。
 
 **推荐写法**：
@@ -1109,14 +1109,14 @@ public final class ModTooltips {                        // 放 common，双端�
 NeoForge.EVENT_BUS.addListener(ModTooltips::onItemTooltip);
 
 // 或用注解（客户端隔离版）：
-@EventBusSubscriber(modid = TemplateConstants.MOD_ID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = OreFoodConstants.MOD_ID, value = Dist.CLIENT)
 public final class NeoForgeClientTooltips {
     @EventBusSubscriber  // 默认就是游戏总线
     ...
 }
 ```
 
-> 若必须引用客户端类（例如 `ClientTooltipFlag.of(flag)`），把它封进一个单独的 `@EventBusSubscriber(value = Dist.CLIENT)` 类；`@Mod` 主类里如需分支，用 `FMLEnvironment.getDist()` 判断后**在另一个类的静态方法里**做客户端装配——服务端不进该分支，JVM 懒解析就不会加载那个类（这正是 `TemplateNeoForge.java:31-36` 注释描述的策略）。
+> 若必须引用客户端类（例如 `ClientTooltipFlag.of(flag)`），把它封进一个单独的 `@EventBusSubscriber(value = Dist.CLIENT)` 类；`@Mod` 主类里如需分支，用 `FMLEnvironment.getDist()` 判断后**在另一个类的静态方法里**做客户端装配——服务端不进该分支，JVM 懒解析就不会加载那个类（这正是 `OreFoodNeoForge.java:31-36` 注释描述的策略）。
 
 ---
 

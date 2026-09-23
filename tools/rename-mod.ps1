@@ -133,7 +133,11 @@ foreach ($f in $files) {
     foreach ($k in $protect.Keys) { $updated = $updated.Replace($protect[$k], $k) }
 
     if ($updated -ne $original) {
-        Set-Content -LiteralPath $f.FullName -Value $updated -NoNewline -Encoding UTF8
+        # 必须用 UTF8Encoding($false) 写出。PowerShell 的 `-Encoding UTF8`
+        # 会写出带 BOM 的文件，而 Gradle 无法解析带 BOM 的 settings.gradle /
+        # build.gradle（报 "Unexpected character: '﻿' @ line 1, column 1"），
+        # javac 也会因 BOM 报非法字符。
+        [System.IO.File]::WriteAllText($f.FullName, $updated, (New-Object System.Text.UTF8Encoding($false)))
         $contentChanged++
     }
 }

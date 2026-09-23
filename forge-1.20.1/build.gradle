@@ -7,7 +7,7 @@ plugins {
 version = mod_version
 group = mod_group_id
 
-// 产物命名：template-forge-1.20.1-1.0.0.jar —— modid - 加载器 - MC 版本 - 模组版本。
+// 产物命名：orefood-forge-1.20.1-1.0.0.jar —— modid - 加载器 - MC 版本 - 模组版本。
 // 三个模块的 jar 经常并排放（发布 / 上传平台），带上加载器与 MC 版本才能一眼分辨。
 base {
     archivesName = "${mod_id}-forge-${minecraft_version}"

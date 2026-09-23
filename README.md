@@ -1,4 +1,4 @@
-# MultiLoader Mod Template
+# MultiLoader Mod OreFood
 
 一个可直接运行的多加载器 Minecraft 模组模板：**一份共享逻辑 + 三个独立平台构建**。
 
@@ -41,14 +41,14 @@
 
 ```
 ├── common/                        ← 共享层：纯 JDK 代码，无构建文件
-│   └── src/main/java/com/lyingice/template/      常量与纯逻辑
-│   └── src/main/resources/assets/template/       语言文件、模型、贴图
+│   └── src/main/java/com/lyingice/orefood/      常量与纯逻辑
+│   └── src/main/resources/assets/orefood/       语言文件、模型、贴图
 │   └── src/test/java/...                         共享层单元测试
 ├── forge-1.20.1/                  ← 独立 Gradle 构建（含自己的 wrapper）
 │   ├── settings.gradle  build.gradle  gradle.properties  gradlew*
-│   └── src/main/java/com/lyingice/template/
-│       ├── forge/TemplateForge.java              模组入口
-│       └── init/TemplateItems.java               物品注册
+│   └── src/main/java/com/lyingice/orefood/
+│       ├── forge/OreFoodForge.java              模组入口
+│       └── init/OreFoodItems.java               物品注册
 │   └── src/main/resources/META-INF/mods.toml     元数据
 ├── neoforge-1.21.1/               ← 同上结构
 │   └── src/main/templates/META-INF/neoforge.mods.toml
@@ -76,7 +76,7 @@
 **3. 构建**：
 
 ```bash
-cd forge-1.20.1      && ./gradlew build          # 产物 build/libs/template-forge-1.20.1-1.0.0.jar
+cd forge-1.20.1      && ./gradlew build          # 产物 build/libs/orefood-forge-1.20.1-1.0.0.jar
 cd neoforge-1.21.1   && ./gradlew build
 cd neoforge-26.1.2   && ./gradlew build          # 首次会下载 Java 25
 ```
@@ -93,21 +93,21 @@ cd neoforge-26.1.2   && ./gradlew build          # 首次会下载 Java 25
 
 ## 改成你自己的模组：改名清单
 
-模板里所有标识都是 `template`，改名时以下位置**必须同步**，漏一处就会在运行期静默失败：
+模板里所有标识都是 `orefood`，改名时以下位置**必须同步**，漏一处就会在运行期静默失败：
 
 | # | 位置 | 内容 |
 |---|---|---|
 | 1 | 三个模块的 `gradle.properties` | `mod_id` / `mod_name` / `mod_group_id` / `mod_version` |
 | 2 | 三个模块的 `settings.gradle` | `rootProject.name` |
 | 3 | 三个模块的 `build.gradle` | `archivesName` 会跟随 `mod_id`，通常无需改 |
-| 4 | `TemplateConstants.java` | `MOD_ID` / `MOD_NAME` / `MOD_VERSION` / `PACKAGE_ROOT` |
-| 5 | `TemplateConstantsTest.java` | 里面对 `MOD_ID` 的断言 |
-| 6 | 三个平台的 `@Mod(...)` 注解 | 已引用 `TemplateConstants.MOD_ID`，通常无需改 |
-| 7 | Java 包目录 | `com/lyingice/template` → 你的包路径 |
-| 8 | 资源命名空间 | `assets/template/` → `assets/<你的 mod_id>/`（三个模块 + common） |
-| 9 | 语言文件 | `item.template.example_item` 的键 |
+| 4 | `OreFoodConstants.java` | `MOD_ID` / `MOD_NAME` / `MOD_VERSION` / `PACKAGE_ROOT` |
+| 5 | `OreFoodConstantsTest.java` | 里面对 `MOD_ID` 的断言 |
+| 6 | 三个平台的 `@Mod(...)` 注解 | 已引用 `OreFoodConstants.MOD_ID`，通常无需改 |
+| 7 | Java 包目录 | `com/lyingice/orefood` → 你的包路径 |
+| 8 | 资源命名空间 | `assets/orefood/` → `assets/<你的 mod_id>/`（三个模块 + common） |
+| 9 | 语言文件 | `item.orefood.example_item` 的键 |
 
-> `mod_id` 有 **4 处**必须完全一致：`gradle.properties`、`TemplateConstants.MOD_ID`、
+> `mod_id` 有 **4 处**必须完全一致：`gradle.properties`、`OreFoodConstants.MOD_ID`、
 > 元数据文件里的 `modId`（由 Gradle 展开自动同步）、`assets/<mod_id>/` 目录名。
 
 仓库里附带 `tools/rename-mod.ps1` 可自动完成 1–9（**建议先提交到 git 再运行**）。
@@ -116,7 +116,7 @@ cd neoforge-26.1.2   && ./gradlew build          # 首次会下载 Java 25
 
 ## 三平台差异速查
 
-对照三份同类文件（`init/TemplateItems.java`）最直观：
+对照三份同类文件（`init/OreFoodItems.java`）最直观：
 
 | | Forge 1.20.1 | NeoForge 1.21.1 / 26.1.2 |
 |---|---|---|

@@ -1,0 +1,12 @@
+{
+  "item.orefood.ore_food": "矿物食品",
+  "item.orefood.iron_steak": "铁牛排",
+  "item.orefood.gold_steak": "金牛排",
+  "item.orefood.diamond_steak": "钻石牛排",
+  "item.orefood.netherite_steak": "下界合金牛排",
+  "enchantment.orefood.powerful_recovery": "强效恢复",
+  "enchantment.orefood.adrenaline": "肾上腺素",
+  "enchantment.orefood.fitness": "强身健体",
+  "enchantment.orefood.satiety": "饱腹",
+  "enchantment.orefood.feast": "盛宴"
+}

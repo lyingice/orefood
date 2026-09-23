@@ -1680,7 +1680,7 @@ public static final List<RegistryDataLoader.RegistryData<?>> WORLDGEN_REGISTRIES
     new RegistryDataLoader.RegistryData<>(Registries.STRUCTURE, Structure.DIRECT_CODEC),                  // :62
     new RegistryDataLoader.RegistryData<>(Registries.STRUCTURE_SET, StructureSet.DIRECT_CODEC),            // :63
     new RegistryDataLoader.RegistryData<>(Registries.PROCESSOR_LIST, StructureProcessorType.DIRECT_CODEC), // :64
-    new RegistryDataLoader.RegistryData<>(Registries.TEMPLATE_POOL, StructureTemplatePool.DIRECT_CODEC),   // :65
+    new RegistryDataLoader.RegistryData<>(Registries.TEMPLATE_POOL, StructureOreFoodPool.DIRECT_CODEC),   // :65
     new RegistryDataLoader.RegistryData<>(Registries.NOISE_SETTINGS, NoiseGeneratorSettings.DIRECT_CODEC), // :66
     new RegistryDataLoader.RegistryData<>(Registries.NOISE, NormalNoise.NoiseParameters.DIRECT_CODEC),     // :67
     new RegistryDataLoader.RegistryData<>(Registries.DENSITY_FUNCTION, DensityFunction.DIRECT_CODEC),      // :68
@@ -1716,7 +1716,7 @@ public static final List<RegistryDataLoader.RegistryData<?>> DIMENSION_REGISTRIE
 ```java
 public static final List<RegistryDataLoader.RegistryData<?>> WORLDGEN_REGISTRIES = List.of(     // :73
     ... DimensionType, Biome, ChatType, ConfiguredWorldCarver, ConfiguredFeature, PlacedFeature,
-        Structure, StructureSet, ProcessorList, TemplatePool, NoiseSettings, Noise, DensityFunction,
+        Structure, StructureSet, ProcessorList, OreFoodPool, NoiseSettings, Noise, DensityFunction,
         WorldPreset, FlatLevelGeneratorPreset, TrimPattern, TrimMaterial,
     new RegistryDataLoader.RegistryData<>(Registries.WOLF_VARIANT, WolfVariant.DIRECT_CODEC, true),       // :91  ← requiredNonEmpty = true
     new RegistryDataLoader.RegistryData<>(Registries.PAINTING_VARIANT, PaintingVariant.DIRECT_CODEC, true),  // :92
@@ -1751,7 +1751,7 @@ public static final List<RegistryDataLoader.RegistryData<?>> SYNCHRONIZED_REGIST
 ```java
 public static final List<RegistryDataLoader.RegistryData<?>> WORLDGEN_REGISTRIES = List.of(     // :83
     ... (DimensionType, Biome, ChatType, ConfiguredWorldCarver, ConfiguredFeature, PlacedFeature,
-         Structure, StructureSet, ProcessorList, TemplatePool, NoiseSettings, Noise, DensityFunction,
+         Structure, StructureSet, ProcessorList, OreFoodPool, NoiseSettings, Noise, DensityFunction,
          WorldPreset, FlatLevelGeneratorPreset, TrimPattern, TrimMaterial, TrialSpawnerConfig)
     new RegistryDataLoader.RegistryData<>(Registries.WOLF_VARIANT, WolfVariant.DIRECT_CODEC, RegistryValidator.nonEmpty()),          // :102
     new RegistryDataLoader.RegistryData<>(Registries.WOLF_SOUND_VARIANT, WolfSoundVariant.DIRECT_CODEC, RegistryValidator.nonEmpty()),  // :103

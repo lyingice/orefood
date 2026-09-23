@@ -1,0 +1,56 @@
+package com.lyingice.orefood.neoforge;
+
+import com.lyingice.orefood.OreFoodConstants;
+import com.lyingice.orefood.data.OreFoodDefinition;
+import com.lyingice.orefood.init.OreFoodComponents;
+import com.lyingice.orefood.init.OreFoodItems;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.registries.DataPackRegistryEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * NeoForge / Minecraft 1.21.1 的模组入口。
+ *
+ * <p>这里只做装配，业务逻辑分别在：
+ * <ul>
+ *   <li>{@link OreFoodItems}：唯一的物品 {@code orefood:ore_food}；</li>
+ *   <li>{@link OreFoodComponents}：携带牛排定义的数据组件；</li>
+ *   <li>{@code com.lyingice.orefood.logic.OreFoodConsume} 配合
+ *       {@code com.lyingice.orefood.mixin.LivingEntityEatMixin}：食用结算与耐久消耗；</li>
+ *   <li>{@code com.lyingice.orefood.client.OreFoodTooltip}：提示框。</li>
+ * </ul>
+ *
+ * <p><b>本类绝不能直接引用任何客户端专属类。</b>NeoForge 没有 Forge 1.20.1 的
+ * {@code clientSideOnly} 开关，{@code @Mod} 类在专用服务端上照样被加载；
+ * 一旦解析到建立在 {@code @OnlyIn(Dist.CLIENT)} 之上的类，就会抛
+ * {@code Attempted to load class ... for invalid dist DEDICATED_SERVER}。
+ */
+@Mod(OreFoodConstants.MOD_ID)
+public final class OreFoodNeoForge {
+
+    public static final Logger LOGGER = LoggerFactory.getLogger(OreFoodConstants.MOD_NAME);
+
+    public OreFoodNeoForge(IEventBus modEventBus) {
+        OreFoodItems.register(modEventBus);
+        OreFoodComponents.register(modEventBus);
+
+        // 自定义动态注册表：牛排定义由数据包写在 data/<pack>/orefood/ore_food/*.json。
+        // 第三个参数是「网络 codec」——注意它的类型是 Codec 而不是 StreamCodec
+        // （原版同步走 NBT）。提供它就意味着「客户端也必须装本模组」，
+        // 创造模式标签页才能在客户端读到数据包定义的每一种牛排。
+        modEventBus.addListener((DataPackRegistryEvent.NewRegistry event) -> event.dataPackRegistry(
+                OreFoodDefinition.REGISTRY_KEY,
+                OreFoodDefinition.CODEC,
+                OreFoodDefinition.CODEC));
+
+        // 让数据包里定义的每一种牛排都出现在创造模式「食物与饮品」页。
+        modEventBus.addListener(OreFoodItems::addToCreativeTab);
+
+        LOGGER.info("{} v{} initialized on NeoForge (Minecraft 1.21.1); shared package {}",
+                OreFoodConstants.MOD_NAME,
+                OreFoodConstants.MOD_VERSION,
+                OreFoodConstants.PACKAGE_ROOT);
+    }
+}

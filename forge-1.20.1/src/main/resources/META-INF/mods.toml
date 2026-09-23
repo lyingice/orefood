@@ -3,7 +3,7 @@ loaderVersion="${loader_version_range}"
 license="${mod_license}"
 
 # 本模组默认按双端模组处理。
-# 若 template 将来变成纯客户端模组（只在客户端有实际作用），打开下面这行：
+# 若 orefood 将来变成纯客户端模组（只在客户端有实际作用），打开下面这行：
 # 它让 Forge 在专用服务端上根本不加载本模组，客户端与服务端的模组列表不一致也不会报错。
 #clientSideOnly=true
 

@@ -12,7 +12,7 @@ tasks.named('wrapper', Wrapper).configure {
 version = mod_version
 group = mod_group_id
 
-// 产物命名：template-neoforge-1.21.1-1.0.0.jar —— modid - 加载器 - MC 版本 - 模组版本。
+// 产物命名：orefood-neoforge-1.21.1-1.0.0.jar —— modid - 加载器 - MC 版本 - 模组版本。
 // 三个模块的 jar 经常并排放（发布 / 上传平台），带上加载器与 MC 版本才能一眼分辨。
 base {
     archivesName = "${mod_id}-neoforge-${minecraft_version}"
@@ -104,7 +104,7 @@ configurations {
 sourceSets.test.java.srcDir '../common/src/test/java'
 
 dependencies {
-    // template 目前不需要额外的模组依赖。
+    // orefood 目前不需要额外的模组依赖。
 
     testImplementation platform('org.junit:junit-bom:5.13.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'

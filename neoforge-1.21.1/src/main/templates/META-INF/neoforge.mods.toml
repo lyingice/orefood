@@ -3,7 +3,7 @@ loaderVersion="${loader_version_range}"
 license="${mod_license}"
 
 # 本模组默认按双端模组处理。
-# 若 template 将来变成纯客户端模组（只在客户端有实际作用），打开下面这行：
+# 若 orefood 将来变成纯客户端模组（只在客户端有实际作用），打开下面这行：
 # NeoForge 1.21 起移除了 Forge 的 clientSideOnly，等价手段就是让加载器忽略版本比对，
 # 这样客户端装了、服务端没装时不会被判成「模组列表不匹配」而拒绝联机。
 #displayTest="IGNORE_ALL_VERSION"
@@ -15,10 +15,12 @@ displayName="${mod_name}"
 authors="${mod_authors}"
 description='''${mod_description}'''
 
-# 声明 Mixin 配置（当前尚未使用，启用时取消注释，并补上
-#   src/main/resources/${mod_id}.mixins.json 与对应的 mixin 类）。
-#[[mixins]]
-#config="${mod_id}.mixins.json"
+# Mixin 配置：NeoForge 在元数据里声明。
+# 注意 Forge 1.20.1 的 mods.toml **不支持** [[mixins]]（写了会被静默忽略），
+# 那边必须改用 JAR 清单的 MixinConfigs 属性——见 forge-1.20.1/build.gradle。
+# 配置文件本身放在 src/main/resources/${mod_id}.mixins.json。
+[[mixins]]
+config="${mod_id}.mixins.json"
 
 [[dependencies.${mod_id}]]
     modId="neoforge"

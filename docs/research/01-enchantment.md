@@ -1,6 +1,6 @@
 # 三版本附魔（Enchantment）系统技术对照报告
 
-> 目标：为「食物附魔」模组（`com.lyingice.template`，工作目录 `D:\0CreaterMods\OreFood`）在
+> 目标：为「食物附魔」模组（`com.lyingice.orefood`，工作目录 `D:\0CreaterMods\OreFood`）在
 > 1.20.1-Forge / 1.21.1-NeoForge / 26.1.2-NeoForge 三平台上各注册 5 个只对食物生效的附魔做前置调研。
 >
 > 所有结论均来自 `.mc-src/<版本>/` 下的反编译源码与随 jar 附带的数据包文件，证据格式为 `源文件路径:行号`。

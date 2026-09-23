@@ -1,0 +1,12 @@
+{
+  "item.orefood.ore_food": "Ore Food",
+  "item.orefood.iron_steak": "Iron Steak",
+  "item.orefood.gold_steak": "Gold Steak",
+  "item.orefood.diamond_steak": "Diamond Steak",
+  "item.orefood.netherite_steak": "Netherite Steak",
+  "enchantment.orefood.powerful_recovery": "Powerful Recovery",
+  "enchantment.orefood.adrenaline": "Adrenaline",
+  "enchantment.orefood.fitness": "Fitness",
+  "enchantment.orefood.satiety": "Satiety",
+  "enchantment.orefood.feast": "Feast"
+}
