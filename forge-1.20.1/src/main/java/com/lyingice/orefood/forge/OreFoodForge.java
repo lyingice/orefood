@@ -2,12 +2,14 @@ package com.lyingice.orefood.forge;
 
 import com.lyingice.orefood.OreFoodConstants;
 import com.lyingice.orefood.crafting.OreFoodIngredients;
+import com.lyingice.orefood.crafting.OreFoodRecipeSugar;
 import com.lyingice.orefood.data.OreFoodDefinition;
 import com.lyingice.orefood.init.OreFoodEnchantments;
 import com.lyingice.orefood.init.OreFoodItems;
 import net.minecraft.core.Registry;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
@@ -61,6 +63,18 @@ public final class OreFoodForge {
 
         // 让数据包里定义的每一种牛排都出现在创造模式「食物与饮品」页。
         modEventBus.addListener(OreFoodItems::addToCreativeTab);
+
+        // 把注册表访问暂存给配方语法糖展开器。
+        //
+        // 时机是关键：这个事件由 ReloadableServerResources 在「组装监听器列表」时
+        // 同步触发（ReloadableServerResources:91），而真正开始跑监听器是在下一行的
+        // SimpleReloadInstance.create(...)（:92）。所以这里拿到的注册表访问
+        // ——含数据包动态注册表——早于配方解析就绪。
+        //
+        // 为什么必须绕这一道：RecipeManager 自己不持有注册表访问，它的
+        // this.context 是 ICondition.IContext，查不到 orefood:ore_food。
+        MinecraftForge.EVENT_BUS.addListener((AddReloadListenerEvent event) ->
+                OreFoodRecipeSugar.captureRegistryAccess(event.getRegistryAccess()));
 
         // 启动诊断：把动态注册表里实际加载到的牛排定义打进日志。
         // 数据包路径或 Codec 写错时原版是**静默**返回空注册表的（不会抛异常），

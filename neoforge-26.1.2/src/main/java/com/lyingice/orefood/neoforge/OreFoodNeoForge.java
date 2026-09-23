@@ -3,6 +3,7 @@ package com.lyingice.orefood.neoforge;
 import com.lyingice.orefood.FoodEnchantment;
 import com.lyingice.orefood.OreFoodConstants;
 import com.lyingice.orefood.crafting.OreFoodIngredients;
+import com.lyingice.orefood.crafting.OreFoodRecipeSugar;
 import com.lyingice.orefood.data.OreFoodDefinition;
 import com.lyingice.orefood.init.OreFoodComponents;
 import com.lyingice.orefood.init.OreFoodItems;
@@ -63,6 +64,13 @@ public final class OreFoodNeoForge {
 
         // 让数据包里定义的每一种牛排都出现在创造模式「食物与饮品」页。
         modEventBus.addListener(OreFoodItems::addToCreativeTab);
+
+        // 配方语法糖：让配方 JSON 能直接写定义 id 而不是整份定义 + 自定义配料类型。
+        //
+        // 26.1.2 有官方钩子 ModifyRecipeJsonsEvent（配方 JSON 读盘后、反序列化之前触发，
+        // 直接给出可原地修改的 JSON 表），所以这里既不需要 Mixin，也不需要像
+        // 1.20.1 那样另外暂存注册表访问——事件自己带 lookupOrThrow。
+        NeoForge.EVENT_BUS.addListener(OreFoodRecipeSugar::expand);
 
         // 启动诊断：把动态注册表里实际加载到的牛排定义打进日志。
         // 数据包路径或 Codec 写错时原版是**静默**返回空注册表的（不会抛异常），

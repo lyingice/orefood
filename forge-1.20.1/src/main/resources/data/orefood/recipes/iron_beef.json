@@ -4,11 +4,8 @@
   "group": "ore_food",
   "key": {
     "#": { "item": "minecraft:iron_ingot" },
-    "X": { "type": "orefood:ore_food", "definition": "orefood:copper_beef" }
+    "X": { "item": "orefood:copper_beef" }
   },
   "pattern": [ "###", "#X#", "###" ],
-  "result": {
-    "item": "orefood:ore_food",
-    "nbt": "{orefood:{id:\"orefood:iron_beef\",nutrition:8,saturation:12.8f,durability:16,enchantment_value:1,model_data:2}}"
-  }
+  "result": { "item": "orefood:iron_beef" }
 }

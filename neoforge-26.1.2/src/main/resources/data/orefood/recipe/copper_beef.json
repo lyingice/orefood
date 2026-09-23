@@ -3,21 +3,9 @@
   "category": "misc",
   "group": "ore_food",
   "key": {
-    "#": { "item": "minecraft:copper_ingot" },
-    "X": { "item": "minecraft:cooked_beef" }
+    "#": "minecraft:copper_ingot",
+    "X": "minecraft:cooked_beef"
   },
   "pattern": [ "###", "#X#", "###" ],
-  "result": {
-    "id": "orefood:ore_food",
-    "components": {
-      "orefood:definition": {
-        "id": "orefood:copper_beef",
-        "nutrition": 6,
-        "saturation": 9.6,
-        "durability": 8,
-        "enchantment_value": 1,
-        "model_data": 1
-      }
-    }
-  }
+  "result": { "id": "orefood:copper_beef" }
 }

@@ -4,11 +4,8 @@
   "group": "ore_food",
   "key": {
     "#": { "item": "minecraft:diamond" },
-    "X": { "type": "orefood:ore_food", "definition": "orefood:golden_beef" }
+    "X": { "item": "orefood:golden_beef" }
   },
   "pattern": [ "###", "#X#", "###" ],
-  "result": {
-    "item": "orefood:ore_food",
-    "nbt": "{orefood:{id:\"orefood:diamond_beef\",nutrition:10,saturation:20.0f,durability:64,enchantment_value:10,model_data:4}}"
-  }
+  "result": { "item": "orefood:diamond_beef" }
 }

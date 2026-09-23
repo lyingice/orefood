@@ -25,6 +25,15 @@ public final class OreFoodIngredients {
     /** JSON 里 {@code "definition"} 字段的名字。 */
     private static final String DEFINITION_FIELD = "definition";
 
+    /**
+     * 配料类型 id，同时也是数据包 JSON 里 {@code "type"} 的值。
+     *
+     * <p>提成常量是因为 {@link OreFoodRecipeSugar} 在展开语法糖时也要写这个值——
+     * 两处各写一遍字符串迟早会写歪。
+     */
+    public static final ResourceLocation ID =
+            new ResourceLocation(OreFoodConstants.MOD_ID, "ore_food");
+
     /** 本模组唯一的配料序列化器。 */
     public static final IIngredientSerializer<OreFoodIngredient> SERIALIZER =
             new IIngredientSerializer<>() {
@@ -53,8 +62,7 @@ public final class OreFoodIngredients {
      * 「影响数据包解析的注册」都发生在那之前。
      */
     public static void register() {
-        CraftingHelper.register(
-                new ResourceLocation(OreFoodConstants.MOD_ID, "ore_food"), SERIALIZER);
+        CraftingHelper.register(ID, SERIALIZER);
     }
 
     private OreFoodIngredients() {

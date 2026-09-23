@@ -122,7 +122,34 @@ tasks.named('processResources', ProcessResources).configure {
     }
 }
 
+// dev 运行（runServer / runClient）加载的是 build/resources/main 这个**目录**，
+// 而不是 jar。而 Mixin 只从「mod 文件」根部的 META-INF/MANIFEST.MF 里读 MixinConfigs
+// ——目录形式的 mod 文件同样如此。只把清单设在 jar 任务上，本地测试时 Mixin 配置
+// 就**根本不会被加载**，症状是 mixin 静默失效（编译通过、启动不报错、功能不起作用），
+// 只有真正打进 jar 才生效。
+//
+// 这里在 resources 输出目录里补一份最小清单专门给 dev 用；jar 的清单由 jar 任务
+// 自己生成，两者互不干扰（下面 jar 任务里排除了这份，避免重复条目）。
+//
+// 注意：路径与 mod_id 都必须在闭包**外面**取好。doLast 闭包的委托是任务对象，
+// 里面既看不到 destinationDirectory（ProcessResources 上没这个属性），
+// 也不便访问脚本变量。
+def devManifestFile = layout.buildDirectory.file('resources/main/META-INF/MANIFEST.MF')
+def devMixinConfigs = "${mod_id}.mixins.json"
+
+tasks.named('processResources', ProcessResources).configure {
+    doLast {
+        def target = devManifestFile.get().asFile
+        target.parentFile.mkdirs()
+        target.text = "Manifest-Version: 1.0\r\nMixinConfigs: ${devMixinConfigs}\r\n\r\n"
+    }
+}
+
 tasks.named('jar', Jar).configure {
+    // processResources 往输出目录里塞了一份给 dev 用的清单，jar 里不要它
+    // ——jar 有自己的清单（见下面的 manifest 块），重复条目会让打包失败。
+    exclude 'META-INF/MANIFEST.MF'
+
     manifest {
         attributes([
                 // Mixin 配置必须在 JAR 清单里声明。

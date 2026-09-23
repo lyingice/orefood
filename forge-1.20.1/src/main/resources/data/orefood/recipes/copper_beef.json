@@ -7,8 +7,5 @@
     "X": { "item": "minecraft:cooked_beef" }
   },
   "pattern": [ "###", "#X#", "###" ],
-  "result": {
-    "item": "orefood:ore_food",
-    "nbt": "{orefood:{id:\"orefood:copper_beef\",nutrition:6,saturation:9.6f,durability:8,enchantment_value:1,model_data:1}}"
-  }
+  "result": { "item": "orefood:copper_beef" }
 }

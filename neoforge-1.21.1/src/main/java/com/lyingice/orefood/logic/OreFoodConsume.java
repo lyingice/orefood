@@ -6,6 +6,7 @@ import com.lyingice.orefood.data.PotionEffectSpec;
 import com.lyingice.orefood.item.OreFoodItem;
 import java.util.List;
 import java.util.Optional;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -91,20 +92,23 @@ public final class OreFoodConsume {
     /**
      * 消费物品栈——矿物牛排改为<b>扣耐久</b>而不是消失。
      *
-     * <p>这是 Mixin 在 {@code LivingEntity#eat} 里重定向 {@code ItemStack#consume} 的落点。
+     * <p>这是 Mixin 在 {@code LivingEntity#eat} 里重定向 {@code ItemStack#consume} 的落点，
+     * 而那个调用点对<b>所有</b>可食用物品都会经过。判断依据是 {@code orefood:definition}
+     * 组件：取不到定义就原样交还原版，所以原版食物与其它模组的物品行为完全不变。
      *
-     * <p>这个方法是 Mixin 在 {@code LivingEntity#eat} 里重定向 {@code ItemStack#consume}
-     * 的落点，而那个调用点对<b>所有</b>可食用物品都会经过。判断依据是
-     * {@code orefood:definition} 组件：取不到定义就原样交还原版，
-     * 所以原版食物与其它模组的物品行为完全不变。
-     *
-     * <p>另外两点：
+     * <p><b>耐久结算完全交给原版 {@link ItemStack#hurtAndBreak}，不自己算。</b>
+     * 自己写「伤害 +1、到顶就 shrink」看着等价，实际会丢掉原版耐久子系统的全部内容：
      * <ul>
-     *   <li>原版的「创造模式不消耗」守卫在 {@code ItemStack#consume} 内部，
-     *       一旦被重定向就绕过了，所以我们自己这条分支必须补一次
-     *       {@code hasInfiniteMaterials()}；</li>
-     *   <li>定义里 {@code durability == 0} 表示无限耐久，走原版路径（吃多少次都不掉）。</li>
+     *   <li><b>耐久附魔</b>——唯一的判定点在 {@code hurtAndBreak} 内部调用的
+     *       {@code EnchantmentHelper.processDurabilityChange}。绕开它就等于让
+     *       耐久 I/II/III 完全失效，而附魔台上花掉的等级买到的只是个装饰；</li>
+     *   <li>创造模式的「不消耗」守卫（{@code hasInfiniteMaterials()}）；</li>
+     *   <li>耐久变化进度触发器 {@code ITEM_DURABILITY_CHANGED}；</li>
+     *   <li>耐久耗尽时的 {@code shrink} 与破坏回调。</li>
      * </ul>
+     *
+     * <p>定义里 {@code durability == 0} 表示<b>无限耐久</b>，此时走原版路径
+     * （按普通食物消耗掉）——与 1.20.1 / 26.1.2 两个平台保持一致。
      *
      * @param stack  物品栈
      * @param amount 原版打算消耗的数量（通常是 1）
@@ -113,20 +117,17 @@ public final class OreFoodConsume {
     public static void consume(ItemStack stack, int amount, LivingEntity entity) {
         OreFoodDefinition definition = OreFoodItem.definitionOf(stack);
         if (definition == null || definition.infiniteDurability()) {
+            // 不是本模组的食物，或者声明了无限耐久：原样交还原版。
             stack.consume(amount, entity);
             return;
         }
-        if (entity != null && entity.hasInfiniteMaterials()) {
+        if (!(entity != null && entity.level() instanceof ServerLevel level)) {
+            // 耐久是权威状态，只在服务端结算。
             return;
         }
 
-        int newDamage = stack.getDamageValue() + amount;
-        if (newDamage >= stack.getMaxDamage()) {
-            // 耐久耗尽：这一份吃掉就没了。
-            stack.shrink(amount);
-        } else {
-            stack.setDamageValue(newDamage);
-        }
+        // 破坏回调在原版是「通知装备槽该物品坏了」；食物没有装备槽，所以是空实现。
+        stack.hurtAndBreak(amount, level, entity, broken -> {});
     }
 
     private OreFoodConsume() {

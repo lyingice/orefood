@@ -180,23 +180,11 @@ redstone_beef_pack/
 
 ## 五、让它能合成（可选）
 
-> 这一节只在你想**用红石牛排当材料或产物**时才需要。原版配方系统有个硬限制，
-> 本模组为此提供了专用配料，见下。
+> 这一节只在你想**用红石牛排当材料或产物**时才需要。
 
-先记住一件事：**五种牛排是同一个物品**（`orefood:ore_food`），
-只有数据组件不同。而**原版配方的配料只按物品类型匹配**——
-`{"item": "orefood:ore_food"}` 会同时接受铜牛排、钻石牛排、任意一种。
-所以原版配料**无法**表达「这一格必须是红石牛排」。
+### 直接写定义 id
 
-本模组为此注册了一个自定义配料，写法是：
-
-```json
-{ "type": "orefood:ore_food", "definition": "mypack:redstone_beef" }
-```
-
-`definition` 填的就是第一节里那个 `id` 字段。
-
-### 例子：8 个红石块 + 中间钻石牛排 → 红石牛排
+产物和配料两处都可以**直接写定义 id**，加载时会自动展开成原版写法。
 
 `data/mypack/recipe/redstone_beef.json`（1.20.1 请把目录改成 `recipes/`）：
 
@@ -207,46 +195,49 @@ redstone_beef_pack/
   "group": "ore_food",
   "key": {
     "#": { "item": "minecraft:redstone_block" },
-    "X": { "type": "orefood:ore_food", "definition": "orefood:diamond_beef" }
+    "X": { "item": "orefood:diamond_beef" }
   },
   "pattern": [ "###", "#X#", "###" ],
-  "result": {
-    "id": "orefood:ore_food",
-    "components": {
-      "orefood:definition": {
-        "id": "mypack:redstone_beef",
-        "nutrition": 10,
-        "saturation": 14.0,
-        "durability": 48,
-        "enchantment_value": 8,
-        "model_data": 6
-      }
-    }
-  }
+  "result": { "id": "mypack:redstone_beef" }
 }
 ```
 
-**产物也要带上定义**——`result` 里那份 `orefood:definition` 就是新牛排的完整数据，
-必须和第一节的定义文件保持一致（是的，等于要写两遍；配方产物是静态的，
-没法「引用」注册表里的条目）。
+`"X": { "item": "orefood:diamond_beef" }` 和 `"result": { "id": "mypack:redstone_beef" }`
+里写的都是**第一节那个 `id` 字段**，不是物品 id——`orefood:diamond_beef` 根本不在物品
+注册表里。展开由本模组在配方**反序列化之前**完成。
 
-### 各版本的产物写法不同
+**为什么需要这套**：五种牛排是同一个物品（`orefood:ore_food`），只有组件不同，而
+**原版配料的匹配语义只比物品类型**——`orefood:ore_food` 会同时接受铜牛排、钻石牛排、
+任意一种，配方会互相冲突。展开时配料会被换成按定义 id 匹配的自定义配料，产物会被换成
+「真实物品 + 定义组件」。
 
-| 版本 | `result` 写法 |
+### 配料与产物写法：三个版本不一样
+
+原版配料的 JSON 格式在 26.1.2 变了，所以**同一个 `key` 不能三平台通用**：
+
+| 版本 | 原版配料 | 定义 id |
+|---|---|---|
+| 1.20.1 / 1.21.1 | `{ "item": "minecraft:iron_ingot" }` | `{ "item": "orefood:diamond_beef" }` |
+| 26.1.2 | `"minecraft:iron_ingot"` | `"orefood:diamond_beef"` |
+
+26.1.2 的 `Ingredient` 内部换成了 `HolderSet<Item>`，只认「`#标签` 字符串」或「元素 id
+数组」，对象形式 `{"item": ...}` 会**解析失败**——连原版物品也一样失败。
+
+产物同理：
+
+| 版本 | 产物 |
 |---|---|
-| 1.20.1 | `{ "item": "orefood:ore_food", "nbt": "{orefood:{id:\"mypack:redstone_beef\",nutrition:10,...}}" }` |
-| 1.21.1 / 26.1.2 | 上面那种 `components` 写法 |
-
-1.20.1 的 `nbt` 是 SNBT 字符串，浮点数要写成 `14.0f` 这样带 `f` 后缀。
+| 1.20.1 | `{ "item": "mypack:redstone_beef" }` |
+| 1.21.1 / 26.1.2 | `{ "id": "mypack:redstone_beef" }` |
 
 ### 几个坑
 
 - **`id` 字段必须填**，否则没法被配方引用；
-- **配料用 `{"type": "orefood:ore_food", ...}`，不要用 `{"item": ...}`**——
-  后者会匹配任意矿物食品，配方就失去了区分能力；
 - **配方目录单复数**：1.20.1 是 `recipes/`，1.21 起是 `recipe/`；
-- **26.1.2 可以不写 `{ "item": ... }` 而直接写字符串**，但为了三平台通用，
-  建议统一用对象形式。
+- **只有能查到定义的那个 id 会被展开**：`minecraft:iron_ingot` 这类真实物品 id 一律
+  原样放过，所以本机制不可能影响别的模组的配方；
+- **报错信息里看到的是展开后的内容**：如果定义 id 拼错了，原版会告诉你
+  `Unknown item 'mypack:redstone_beef'`，而不是提示你「这不是物品」。
 
 ---
 

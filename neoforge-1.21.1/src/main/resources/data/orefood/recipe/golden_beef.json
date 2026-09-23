@@ -4,20 +4,8 @@
   "group": "ore_food",
   "key": {
     "#": { "item": "minecraft:gold_ingot" },
-    "X": { "type": "orefood:ore_food", "definition": "orefood:iron_beef" }
+    "X": { "item": "orefood:iron_beef" }
   },
   "pattern": [ "###", "#X#", "###" ],
-  "result": {
-    "id": "orefood:ore_food",
-    "components": {
-      "orefood:definition": {
-        "id": "orefood:golden_beef",
-        "nutrition": 8,
-        "saturation": 16.0,
-        "durability": 32,
-        "enchantment_value": 5,
-        "model_data": 3
-      }
-    }
-  }
+  "result": { "id": "orefood:golden_beef" }
 }
