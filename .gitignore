@@ -1,0 +1,33 @@
+# ---- Gradle ----
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# ---- IDE ----
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.classpath
+.project
+
+# ---- Minecraft 运行目录 ----
+run/
+run-data/
+runs/
+
+# ---- 临时/工具目录 ----
+.tmp-*/
+# 由 tools/extract-mc-src.ps1 与 tools/decompile-forge-1.20.1.ps1 生成的反编译 MC 源码，
+# 仅供本地检索对照，体积大且可随时重建。
+.mc-src/
+build.log
+# maven-publish 的本地产出目录（见各模块 build.gradle 的 publishing 段）
+repo/
+
+# ---- OS ----
+Thumbs.db
+Desktop.ini
+.DS_Store

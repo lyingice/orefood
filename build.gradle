@@ -1,0 +1,30 @@
+// 根构建不产出任何 artifact，只提供跨平台的便捷任务。
+//
+// 这里刻意不使用 composite build(includeBuild)：一旦把三个模块纳入同一个
+// Gradle 会话，它们就必须共用根构建的 Gradle 版本，而三个模块的要求并不一致
+// (ForgeGradle 6 用 8.8；ModDevGradle 在 1.21.1 用 8.14.2、在 26.1.2 用 9.1.0)。
+// 因此改为调用各模块自己的 wrapper，让每个模块各用各的版本。
+def platformTask(String taskName, String moduleDir, String taskDescription) {
+    // 注意：OS 判断必须放在方法内部。脚本顶层的 def 变量属于脚本 run() 作用域，
+    // 方法体及其闭包无法访问，否则会报 "Could not get unknown property"。
+    def isWindows = System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')
+    def buildCommand = isWindows ? ['cmd', '/c', 'gradlew.bat', 'build'] : ['./gradlew', 'build']
+    def moduleDirectory = file(moduleDir)
+
+    tasks.register(taskName, Exec) {
+        group = 'template'
+        description = taskDescription
+        workingDir = moduleDirectory
+        commandLine buildCommand
+    }
+}
+
+platformTask('buildForge', 'forge-1.20.1', '构建 Forge 1.20.1 模块')
+platformTask('buildNeoForge', 'neoforge-1.21.1', '构建 NeoForge 1.21.1 模块')
+platformTask('buildNeoForge2612', 'neoforge-26.1.2', '构建 NeoForge 26.1.2 模块（需要 Java 25）')
+
+tasks.register('buildAll') {
+    group = 'template'
+    description = '构建全部三个平台模块'
+    dependsOn 'buildForge', 'buildNeoForge', 'buildNeoForge2612'
+}

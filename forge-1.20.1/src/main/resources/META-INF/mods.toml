@@ -1,0 +1,42 @@
+modLoader="javafml"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
+
+# 本模组默认按双端模组处理。
+# 若 template 将来变成纯客户端模组（只在客户端有实际作用），打开下面这行：
+# 它让 Forge 在专用服务端上根本不加载本模组，客户端与服务端的模组列表不一致也不会报错。
+#clientSideOnly=true
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="${mod_authors}"
+description='''${mod_description}'''
+
+[[dependencies.${mod_id}]]
+    modId="forge"
+    mandatory=true
+    versionRange="${forge_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+# ---- 前置依赖示例（按需启用）----
+# Forge 用 mandatory / ordering / side 三个字段描述依赖。
+# side="CLIENT" 表示「只要求客户端安装该前置」：当被依赖的模组自己是纯客户端模组
+# （它的 mods.toml 写了 clientSideOnly=true）时，这里必须写 CLIENT ——
+# 写成 "BOTH" 会让专用服务端因「缺少前置」而拒绝启动，而那个要求在服务端永远无法满足。
+#
+#[[dependencies.${mod_id}]]
+#    modId="example_mod"
+#    mandatory=true
+#    versionRange="[1.0.0,)"
+#    ordering="NONE"
+#    side="BOTH"

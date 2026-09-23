@@ -1,0 +1,168 @@
+plugins {
+    id 'idea'
+    id 'java-library'
+    id 'maven-publish'
+    id 'net.neoforged.moddev' version '2.0.147'
+}
+
+tasks.named('wrapper', Wrapper).configure {
+    distributionType = Wrapper.DistributionType.BIN
+}
+
+version = mod_version
+group = mod_group_id
+
+// 产物命名：template-neoforge-26.1.2-1.0.0.jar —— modid - 加载器 - MC 版本 - 模组版本。
+// 三个模块的 jar 经常并排放（发布 / 上传平台），带上加载器与 MC 版本才能一眼分辨。
+base {
+    archivesName = "${mod_id}-neoforge-${minecraft_version}"
+}
+
+repositories {
+    mavenLocal()
+}
+
+// Minecraft 26.1 起要求 Java 25（字节码 major version 69）。
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+
+// ---------------------------------------------------------------------------
+// 共享源码层：与另外两个平台模块编译同一份 ../common 源码。
+// ---------------------------------------------------------------------------
+sourceSets.main.java.srcDir '../common/src/main/java'
+
+// 共享资源层：语言文件等平台无关资源由三个模块打包同一份，
+// 避免同一条文案要在三个地方各改一遍。
+sourceSets.main.resources.srcDir '../common/src/main/resources'
+
+neoForge {
+    version = project.neo_version
+
+    // 注意：这里刻意不配置 parchment。26.1.x 的 parchment 版本号尚未核实，
+    // 写错会直接导致解析失败；需要时再补。
+
+    runs {
+        // ideName 决定 IDEA 的 Run/Debug 下拉里显示的名字；run 名（client/server/
+        // clientData/serverData）必须与 run type 对应，不能改。
+        client {
+            client()
+            ideName = 'Client-26.1'
+        }
+
+        server {
+            server()
+            ideName = 'Server-26.1'
+            programArgument '--nogui'
+        }
+
+        // 26.1 起原版把数据生成器拆成了两个入口类：
+        //   client（assets / 模型，net.minecraft.client.data.Main）
+        //   server（data / 配方、标签、战利品表，net.minecraft.data.Main）
+        // NeoForge 随之把 run type 从 "data" 改名为 "clientData" / "serverData"
+        // （见 neoforge-<ver>-moddev-config.json 的 runs 段）。
+        // 继续写 data() 只会在运行期报 "Trying to prepare unknown run: data"，
+        // 因为插件仍按旧名生成 :prepareDataRun 任务。
+        clientData {
+            clientData()
+            ideName = 'ClientData-26.1'
+            programArguments.addAll '--mod', project.mod_id, '--all',
+                    '--output', file('src/generated/resources/').getAbsolutePath(),
+                    '--existing', file('src/main/resources/').getAbsolutePath()
+        }
+
+        serverData {
+            serverData()
+            ideName = 'ServerData-26.1'
+            programArguments.addAll '--mod', project.mod_id, '--all',
+                    '--output', file('src/generated/resources/').getAbsolutePath(),
+                    '--existing', file('src/main/resources/').getAbsolutePath()
+        }
+
+        configureEach {
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+    }
+
+    // 让 test 源集也能访问 Minecraft / NeoForge 类（默认只有 main 有）。
+    unitTest {
+        enable()
+        testedMod = mods.getByName(project.mod_id)
+    }
+}
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+// ---------------------------------------------------------------------------
+// 测试源集：仅供开发期验证，**不进入发布 jar**。
+//
+// jar 任务只打 sourceSets.main.output，测试产物天然不会被打包；
+// 这里额外把 ../common/src/test/java 并进来，让共享层的测试在三个平台上各跑一遍。
+// ---------------------------------------------------------------------------
+sourceSets.test.java.srcDir '../common/src/test/java'
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.13.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test', Test).configure {
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'failed', 'skipped'
+        exceptionFormat = 'full'
+    }
+}
+
+var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
+    var replaceProperties = [
+            minecraft_version      : minecraft_version,
+            minecraft_version_range: minecraft_version_range,
+            neo_version            : neo_version,
+            neo_version_range      : neo_version_range,
+            loader_version_range   : loader_version_range,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
+            mod_version            : mod_version,
+            mod_authors            : mod_authors,
+            mod_description        : mod_description
+    ]
+    inputs.properties replaceProperties
+    expand replaceProperties
+    from "src/main/templates"
+    into "build/generated/sources/modMetadata"
+}
+sourceSets.main.resources.srcDir generateModMetadata
+neoForge.ideSyncTask generateModMetadata
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            url "file://${project.projectDir}/repo"
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+// 与 neoforge-1.21.1 保持一致：让 IDEA 自动带上下载源码 / Javadoc。
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
+    }
+}

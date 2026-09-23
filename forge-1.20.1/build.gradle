@@ -1,0 +1,144 @@
+plugins {
+    id 'idea'
+    id 'maven-publish'
+    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+}
+
+version = mod_version
+group = mod_group_id
+
+// 产物命名：template-forge-1.20.1-1.0.0.jar —— modid - 加载器 - MC 版本 - 模组版本。
+// 三个模块的 jar 经常并排放（发布 / 上传平台），带上加载器与 MC 版本才能一眼分辨。
+base {
+    archivesName = "${mod_id}-forge-${minecraft_version}"
+}
+
+// 1.18 起 Mojang 向终端用户下发 Java 17，因此本构建面向 Java 17。
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+// ---------------------------------------------------------------------------
+// 共享源码层：把 ../common 直接作为源码目录编译进本 jar。
+// 不打包 jarJar / Shadow —— common 是纯逻辑，直接参与编译即可，
+// 任何一边编译失败都会立刻暴露共享层的问题。
+// ---------------------------------------------------------------------------
+sourceSets.main.java.srcDir '../common/src/main/java'
+
+// 共享资源层：语言文件等平台无关资源由三个模块打包同一份，
+// 避免同一条文案要在三个地方各改一遍。
+sourceSets.main.resources.srcDir '../common/src/main/resources'
+
+minecraft {
+    mappings channel: mapping_channel, version: mapping_version
+
+    // 让 IDE 在启动游戏前先执行 processResources。
+    copyIdeResources = true
+
+    runs {
+        // 注意：ForgeGradle 6 没有 ModDevGradle 的 ideName 等价物。IDEA 里的运行配置名
+        // 由 taskName 派生（"run" + 首字母大写的 run 名），因此这里是固定的
+        // runClient / runServer / runData；而 run 名又必须保持 client / server / data
+        // 才能匹配 userdev 的 run type（改名会找不到 run type）。
+        // 想在 IDEA 里看到 "Client-1.20" 这类名字，只能在生成后手动 Rename。
+        configureEach {
+            workingDirectory project.file('run')
+
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                "${mod_id}" {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        client {
+            property 'forge.enabledGameTestNamespaces', mod_id
+        }
+
+        server {
+            property 'forge.enabledGameTestNamespaces', mod_id
+            args '--nogui'
+        }
+
+        data {
+            // 数据生成使用独立的工作目录
+            workingDirectory project.file('run-data')
+            args '--mod', mod_id, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+        }
+    }
+}
+
+// 包含数据生成器产出的资源。
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+// ---------------------------------------------------------------------------
+// 测试源集：仅供开发期验证，**不进入发布 jar**。
+//
+// jar 任务只打 sourceSets.main.output，测试产物天然不会被打包；
+// 这里额外把 ../common/src/test/java 并进来，让共享层的测试在三个平台上各跑一遍
+// （与 main 的共享方式对称，测试代码也享受同一份多重校验）。
+// ---------------------------------------------------------------------------
+sourceSets.test.java.srcDir '../common/src/test/java'
+
+dependencies {
+    // 指定使用的 Minecraft + Forge 版本。ForgeGradle 会自行拉取 userdev 并完成配置。
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+
+    // 测试只依赖 JUnit —— 共享层是纯 JDK，可以脱离 Minecraft 运行。
+    testImplementation platform('org.junit:junit-bom:5.13.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test', Test).configure {
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'failed', 'skipped'
+        exceptionFormat = 'full'
+    }
+}
+
+// 展开元数据文件中的占位符。
+// 注意：Groovy 的 expand 对美元符号敏感，模板里不要出现裸的美元符号。
+tasks.named('processResources', ProcessResources).configure {
+    var replaceProperties = [
+            minecraft_version      : minecraft_version,
+            minecraft_version_range: minecraft_version_range,
+            forge_version          : forge_version,
+            forge_version_range    : forge_version_range,
+            loader_version_range   : loader_version_range,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
+            mod_version            : mod_version,
+            mod_authors            : mod_authors,
+            mod_description        : mod_description
+    ]
+    inputs.properties replaceProperties
+
+    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
+        expand replaceProperties + [project: project]
+    }
+}
+
+tasks.named('jar', Jar).configure {
+    manifest {
+        attributes([
+                'Specification-Title'     : mod_id,
+                'Specification-Vendor'    : mod_authors,
+                'Specification-Version'   : '1',
+                'Implementation-Title'    : project.name,
+                'Implementation-Version'  : project.jar.archiveVersion,
+                'Implementation-Vendor'   : mod_authors,
+                'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+
+    // 这是重新混淆 jar 的推荐做法。
+    finalizedBy 'reobfJar'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
