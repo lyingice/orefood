@@ -1,0 +1,32 @@
+feat: recipes, durability-enchant tag, MIT license
+
+Recipes (user request): every tier is 8 ingots in a ring around the previous tier,
+exactly like a furnace; netherite goes through the smithing table.
+  cooked_beef -> copper_beef -> iron_beef -> golden_beef -> diamond_beef
+  diamond_beef + netherite_upgrade_smithing_template + netherite_ingot -> netherite_beef
+
+This needed a custom Ingredient on all three platforms. All five beefs are the SAME
+item, and vanilla matches ingredients by item type alone (1.20.1 does not even look
+at NBT; 1.21+ uses SIMPLE_ITEM_CODEC and compares only item+count), so vanilla
+cannot express "the middle slot must be the previous tier". The new
+orefood:ore_food ingredient matches on the definition id instead:
+  { "type": "orefood:ore_food", "definition": "orefood:copper_beef" }
+
+- 1.20.1: AbstractIngredient + IIngredientSerializer via CraftingHelper.register
+- 1.21.1 / 26.1.2: ICustomIngredient + IngredientType. 26.1.2 renamed the display
+  method to items() returning Stream<Holder<Item>>, and StreamCodec.composite only
+  accepts 6 fields, so the now-7-field stream codec is hand-written.
+
+Recipe results carry the definition via nbt (1.20.1) or components (1.21+).
+The definition record gained an optional id field for the ingredient to match on.
+
+Durability enchantments (user request): vanilla unbreaking/mending use
+supported_items = #minecraft:enchantable/durability and our beef was not in it, so
+they could not be applied at all. Added that item tag on 1.21.1/26.1.2; 1.20.1 needs
+nothing because EnchantmentCategory.BREAKABLE tests Item#canBeDepleted.
+
+License (user request): All Rights Reserved -> MIT, plus a LICENSE file.
+
+Verified on a dedicated server: 1295 recipes loaded, up from 1290 - exactly our 5 -
+with no parsing errors, 5 definitions loaded, and the enchantment tag self-check
+unchanged.

@@ -1,6 +1,7 @@
 package com.lyingice.orefood.forge;
 
 import com.lyingice.orefood.OreFoodConstants;
+import com.lyingice.orefood.crafting.OreFoodIngredients;
 import com.lyingice.orefood.data.OreFoodDefinition;
 import com.lyingice.orefood.init.OreFoodEnchantments;
 import com.lyingice.orefood.init.OreFoodItems;
@@ -10,6 +11,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DataPackRegistryEvent;
 import org.slf4j.Logger;
@@ -44,6 +46,10 @@ public final class OreFoodForge {
 
         OreFoodItems.register(modEventBus);
         OreFoodEnchantments.register(modEventBus);
+
+        // 自定义配方配料必须在这时候注册：1.20.1 的 CraftingHelper.register 是往一张
+        // 全局表里塞，而配方 JSON 从数据包加载，所以要在 FMLCommonSetupEvent 里完成。
+        modEventBus.addListener((FMLCommonSetupEvent event) -> event.enqueueWork(OreFoodIngredients::register));
 
         // 自定义动态注册表：牛排定义由数据包写在 data/<pack>/orefood/ore_food/*.json。
         // 第三个参数是「网络 codec」（类型是 Codec，原版同步走 NBT）——提供它就意味着

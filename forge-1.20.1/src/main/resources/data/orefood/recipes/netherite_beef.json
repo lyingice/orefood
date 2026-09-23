@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": { "item": "minecraft:netherite_ingot" },
+  "base": { "type": "orefood:ore_food", "definition": "orefood:diamond_beef" },
+  "result": {
+    "item": "orefood:ore_food",
+    "nbt": "{orefood:{id:\"orefood:netherite_beef\",nutrition:12,saturation:24.0f,durability:128,enchantment_value:15,model_data:5}}"
+  },
+  "template": { "item": "minecraft:netherite_upgrade_smithing_template" }
+}

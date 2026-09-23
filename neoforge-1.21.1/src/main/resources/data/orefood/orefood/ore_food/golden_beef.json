@@ -1,6 +1,7 @@
 {
+  "id": "orefood:golden_beef",
   "nutrition": 8,
-  "saturation": 16,
+  "saturation": 16.0,
   "durability": 32,
   "enchantment_value": 5,
   "model_data": 3

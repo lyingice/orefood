@@ -95,6 +95,44 @@ pwsh tools/decompile-forge-1.20.1.ps1  # 1.20.1：ForgeGradle 只缓存 class，
 | 获取途径 | 覆写 `isTreasureOnly()` / `isDiscoverable()` / `isTradeable()` | 数据包附魔标签（见下） | 同 1.21.1 |
 | 等级读取 | `EnchantmentHelper.getItemEnchantmentLevel(Enchantment, ItemStack)` | `stack.getEnchantmentLevel(Holder<Enchantment>)` | 同 1.21.1 |
 
+### 配方：为什么必须有自定义 Ingredient
+
+方块的合成配方里「中间那一格必须是上一级牛排」，而五种牛排是**同一个物品**
+（`orefood:ore_food`），只有数据组件 / NBT 不同。
+
+**三个版本的原版配料都只按物品类型匹配**：
+
+- 1.20.1 `Ingredient#test` → `itemstack.is(stack.getItem())`，连 NBT 都不看；
+- 1.21.1 `Ingredient.ItemValue` 用 `ItemStack.SIMPLE_ITEM_CODEC`（无组件），
+  `equals` 也只比 item + count；
+- 26.1.2 同上。
+
+所以原版配料表达不了这个需求，三平台各写了一个自定义配料
+（注册名都是 `orefood:ore_food`，数据包里写
+`{ "type": "orefood:ore_food", "definition": "orefood:copper_beef" }`）：
+
+| | 1.20.1 (Forge) | 1.21.1 / 26.1.2 (NeoForge) |
+|---|---|---|
+| 实现方式 | 继承 `AbstractIngredient` + `IIngredientSerializer` | 实现 `ICustomIngredient` |
+| 注册 | `CraftingHelper.register(id, serializer)`，在 `FMLCommonSetupEvent` 里 | `DeferredRegister` → `NeoForgeRegistries.Keys.INGREDIENT_TYPES` |
+| 展示用物品 | `getItems()` → `ItemStack[]` | 1.21.1 `getItems()` → `Stream<ItemStack>`；**26.1.2 `items()` → `Stream<Holder<Item>>`** |
+
+**配方产物**同样要带定义，各版本写法不同：
+
+- 1.20.1：`result.nbt`（SNBT 字符串），Forge 的 `CraftingHelper.getItemStack` 支持；
+- 1.21.1 / 26.1.2：`result.components`（`ItemStack.CODEC` 支持 `components` 字段）。
+
+配方目录同样是单复数差异：1.20.1 是 `data/<ns>/recipes/`，1.21+ 是 `data/<ns>/recipe/`。
+
+### 耐久附魔的物品标签
+
+原版「耐久 / 经验修补」的 `supported_items` 是 `#minecraft:enchantable/durability`，
+而本模组的牛排**不在**那个标签里，所以默认附不上——需要在
+`data/minecraft/tags/item/enchantable/durability.json` 里补上 `orefood:ore_food`。
+
+1.20.1 没有这套标签，它用 `EnchantmentCategory.BREAKABLE`（判定 `Item#canBeDepleted`），
+带 `durability()` 注册的物品自动满足，**不需要**数据包。
+
 #### 附魔的获取途径（1.21+ 全靠标签，漏了就是「哪都拿不到」）
 
 原版的 `VanillaEnchantmentTagsProvider` 是这么组织的：

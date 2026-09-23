@@ -52,6 +52,7 @@ redstone_beef_pack/
 
 ```json
 {
+  "id": "mypack:redstone_beef",
   "nutrition": 10,
   "saturation": 14.0,
   "durability": 48,
@@ -75,6 +76,7 @@ redstone_beef_pack/
 
 | 字段 | 默认值 | 说明 |
 |---|---|---|
+| `id` | 无 | 这份定义自己的 id。**想让配方引用它就必须填**（见第五节） |
 | `nutrition` | 0 | 饱食度（鸡腿图标数的一半，与原版一致） |
 | `saturation` | 0 | 饱和度。**这里填最终值**，不是原版食谱里那个「饱和度系数」。原版换算：饱和度 = 饱食度 × 系数 × 2 |
 | `durability` | 0 | 还能吃几次。**0 = 无限耐久**，吃多少次都不掉 |
@@ -176,7 +178,79 @@ redstone_beef_pack/
 
 ---
 
-## 五、把它加进食物标签
+## 五、让它能合成（可选）
+
+> 这一节只在你想**用红石牛排当材料或产物**时才需要。原版配方系统有个硬限制，
+> 本模组为此提供了专用配料，见下。
+
+先记住一件事：**五种牛排是同一个物品**（`orefood:ore_food`），
+只有数据组件不同。而**原版配方的配料只按物品类型匹配**——
+`{"item": "orefood:ore_food"}` 会同时接受铜牛排、钻石牛排、任意一种。
+所以原版配料**无法**表达「这一格必须是红石牛排」。
+
+本模组为此注册了一个自定义配料，写法是：
+
+```json
+{ "type": "orefood:ore_food", "definition": "mypack:redstone_beef" }
+```
+
+`definition` 填的就是第一节里那个 `id` 字段。
+
+### 例子：8 个红石块 + 中间钻石牛排 → 红石牛排
+
+`data/mypack/recipe/redstone_beef.json`（1.20.1 请把目录改成 `recipes/`）：
+
+```json
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "ore_food",
+  "key": {
+    "#": { "item": "minecraft:redstone_block" },
+    "X": { "type": "orefood:ore_food", "definition": "orefood:diamond_beef" }
+  },
+  "pattern": [ "###", "#X#", "###" ],
+  "result": {
+    "id": "orefood:ore_food",
+    "components": {
+      "orefood:definition": {
+        "id": "mypack:redstone_beef",
+        "nutrition": 10,
+        "saturation": 14.0,
+        "durability": 48,
+        "enchantment_value": 8,
+        "model_data": 6
+      }
+    }
+  }
+}
+```
+
+**产物也要带上定义**——`result` 里那份 `orefood:definition` 就是新牛排的完整数据，
+必须和第一节的定义文件保持一致（是的，等于要写两遍；配方产物是静态的，
+没法「引用」注册表里的条目）。
+
+### 各版本的产物写法不同
+
+| 版本 | `result` 写法 |
+|---|---|
+| 1.20.1 | `{ "item": "orefood:ore_food", "nbt": "{orefood:{id:\"mypack:redstone_beef\",nutrition:10,...}}" }` |
+| 1.21.1 / 26.1.2 | 上面那种 `components` 写法 |
+
+1.20.1 的 `nbt` 是 SNBT 字符串，浮点数要写成 `14.0f` 这样带 `f` 后缀。
+
+### 几个坑
+
+- **`id` 字段必须填**，否则没法被配方引用；
+- **配料用 `{"type": "orefood:ore_food", ...}`，不要用 `{"item": ...}`**——
+  后者会匹配任意矿物食品，配方就失去了区分能力；
+- **配方目录单复数**：1.20.1 是 `recipes/`，1.21 起是 `recipe/`；
+- **26.1.2 可以不写 `{ "item": ... }` 而直接写字符串**，但为了三平台通用，
+  建议统一用对象形式。
+
+---
+
+## 六、把它加进食物标签
 
 本模组的五个附魔只能附在**能吃的物品**上，而判断依据是标签：
 
@@ -204,7 +278,7 @@ redstone_beef_pack/
 
 ---
 
-## 六、几个一定会踩的坑
+## 七、几个一定会踩的坑
 
 1. **改完要重进世界。** 动态注册表只在世界加载时读一次，`/reload` 不会重读。
 2. **注册表变空不会报错。** 路径写错、JSON 语法错、字段类型不对，

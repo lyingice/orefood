@@ -2,6 +2,7 @@ package com.lyingice.orefood.neoforge;
 
 import com.lyingice.orefood.FoodEnchantment;
 import com.lyingice.orefood.OreFoodConstants;
+import com.lyingice.orefood.crafting.OreFoodIngredients;
 import com.lyingice.orefood.data.OreFoodDefinition;
 import com.lyingice.orefood.init.OreFoodComponents;
 import com.lyingice.orefood.init.OreFoodItems;
@@ -44,6 +45,8 @@ public final class OreFoodNeoForge {
     public OreFoodNeoForge(IEventBus modEventBus) {
         OreFoodItems.register(modEventBus);
         OreFoodComponents.register(modEventBus);
+        // 自定义配方配料（用来表达「中间那一格必须是某一种牛排」）。
+        OreFoodIngredients.register(modEventBus);
 
         // 自定义动态注册表：牛排定义由数据包写在 data/<pack>/orefood/ore_food/*.json。
         // 第三个参数是「网络 codec」——注意它的类型是 Codec 而不是 StreamCodec

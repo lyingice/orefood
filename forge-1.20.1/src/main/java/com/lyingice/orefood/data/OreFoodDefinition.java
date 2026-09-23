@@ -4,6 +4,7 @@ import com.lyingice.orefood.OreFoodConstants;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.List;
+import java.util.Optional;
 import net.minecraft.core.Registry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
@@ -16,9 +17,10 @@ import net.minecraft.world.item.ItemStack;
 /**
  * 「矿物牛排」的数据定义——由数据包通过自定义动态注册表加载（Forge 1.20.1）。
  *
- * <p>JSON 格式与 1.21.1 侧<b>完全一致</b>：
+ * <p>JSON 格式与另外两个平台<b>完全一致</b>：
  * <pre>{@code
  * {
+ *   "id": "orefood:iron_beef",
  *   "nutrition": 8,
  *   "saturation": 12.8,
  *   "durability": 16,
@@ -29,11 +31,14 @@ import net.minecraft.world.item.ItemStack;
  * }
  * }</pre>
  *
- * <p><b>与 1.21.1 的关键差异</b>：1.20.1 没有数据组件（Data Components 是 1.20.5 才引入的），
- * 所以物品栈靠 <b>NBT</b> 携带定义。NBT 的读写直接复用同一个 {@link #CODEC} +
- * {@code NbtOps}，因此数据包的 JSON 与物品栈的 NBT 永远共用一套字段名，
- * 不会出现两边字段对不上的情况。
+ * <p><b>与 1.21.1 / 26.1.2 的差异</b>：1.20.1 没有数据组件（那是 1.20.5 才引入的），
+ * 物品栈靠 <b>NBT</b> 携带定义。NBT 的读写直接复用同一个 {@link #CODEC} + {@code NbtOps}，
+ * 因此数据包的 JSON 与物品栈的 NBT 永远共用一套字段名。
  *
+ * @param id               这份定义自己的 id，例如 {@code orefood:iron_beef}。
+ *                         <b>配方靠它区分「同一个物品的不同变体」</b>——
+ *                         原版配方只按物品类型匹配，五种牛排物品 id 完全相同，
+ *                         没有这个字段就没法表达「中间放上一级牛排」
  * @param nutrition        饱食度
  * @param saturation       饱和度
  * @param durability       最大耐久；<b>0 表示无限耐久</b>（吃了不掉耐久）
@@ -42,6 +47,7 @@ import net.minecraft.world.item.ItemStack;
  * @param effects          食用后附带的状态效果，可为空
  */
 public record OreFoodDefinition(
+        Optional<ResourceLocation> id,
         int nutrition,
         float saturation,
         int durability,
@@ -58,6 +64,7 @@ public record OreFoodDefinition(
     public static final String STACK_TAG = OreFoodConstants.MOD_ID;
 
     public static final Codec<OreFoodDefinition> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            ResourceLocation.CODEC.optionalFieldOf("id").forGetter(OreFoodDefinition::id),
             ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("nutrition", 0).forGetter(OreFoodDefinition::nutrition),
             Codec.FLOAT.optionalFieldOf("saturation", 0.0F).forGetter(OreFoodDefinition::saturation),
             ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("durability", 0).forGetter(OreFoodDefinition::durability),
@@ -69,6 +76,11 @@ public record OreFoodDefinition(
     /** @return 该定义是否为「无限耐久」——吃了不掉耐久，也就永不损坏。 */
     public boolean infiniteDurability() {
         return this.durability <= 0;
+    }
+
+    /** @return 该定义是否就是指定的那份（用 {@link #id} 比较）。 */
+    public boolean hasId(ResourceLocation other) {
+        return this.id.isPresent() && this.id.get().equals(other);
     }
 
     /** 把定义写进物品栈的 NBT。 */
@@ -93,6 +105,6 @@ public record OreFoodDefinition(
 
     /** @return 一个空定义，用于兜底，避免各处判空。 */
     public static OreFoodDefinition empty() {
-        return new OreFoodDefinition(0, 0.0F, 0, 0, 0, List.of());
+        return new OreFoodDefinition(Optional.empty(), 0, 0.0F, 0, 0, 0, List.of());
     }
 }
