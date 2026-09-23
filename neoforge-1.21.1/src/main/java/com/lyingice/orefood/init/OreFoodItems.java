@@ -4,6 +4,7 @@ import com.lyingice.orefood.OreFoodConstants;
 import com.lyingice.orefood.data.OreFoodDefinition;
 import com.lyingice.orefood.item.OreFoodItem;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -76,20 +77,32 @@ public final class OreFoodItems {
     }
 
     /**
-     * 按定义造一个矿物牛排物品栈。
+     * 一块牛排该带哪些组件——「一块牛排长什么样」的<b>唯一</b>权威来源。
+     *
+     * <p><b>为什么单独提出来</b>：配方语法糖也要用它，而配方 JSON 在反序列化之前就要展开，
+     * 那种时机不该构造 {@code ItemStack}（26.1.2 上会直接抛
+     * {@code NullPointerException: Components not bound yet}，见那边的注释）。
+     * 这里返回组件补丁，由调用方决定是套到物品栈上还是编码成 JSON。
      *
      * @param id         定义 id，同时决定显示名（{@code item.<命名空间>.<路径>}）
      * @param definition 牛排定义
      */
-    public static ItemStack stackFor(ResourceLocation id, OreFoodDefinition definition) {
-        ItemStack stack = new ItemStack(ORE_FOOD.get());
-        stack.set(OreFoodComponents.DEFINITION.get(), definition);
-        stack.set(DataComponents.ITEM_NAME, Component.translatable(nameKey(id)));
+    public static DataComponentPatch componentsFor(ResourceLocation id, OreFoodDefinition definition) {
+        DataComponentPatch.Builder builder = DataComponentPatch.builder();
+        builder.set(OreFoodComponents.DEFINITION.get(), definition);
+        builder.set(DataComponents.ITEM_NAME, Component.translatable(nameKey(id)));
         if (definition.modelData() > 0) {
             // 1.21.1 没有 ITEM_MODEL 组件，外观只能靠 custom_model_data +
             // 模型文件里的 overrides 列表来切（见 assets/orefood/models/item/ore_food.json）。
-            stack.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(definition.modelData()));
+            builder.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(definition.modelData()));
         }
+        return builder.build();
+    }
+
+    /** 按定义造一个矿物牛排物品栈；组件取自 {@link #componentsFor}，与配方产物完全一致。 */
+    public static ItemStack stackFor(ResourceLocation id, OreFoodDefinition definition) {
+        ItemStack stack = new ItemStack(ORE_FOOD.get());
+        stack.applyComponents(componentsFor(id, definition));
         return stack;
     }
 

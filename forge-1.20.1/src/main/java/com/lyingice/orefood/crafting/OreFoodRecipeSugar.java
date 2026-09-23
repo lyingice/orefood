@@ -4,16 +4,17 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.lyingice.orefood.OreFoodConstants;
 import com.lyingice.orefood.data.OreFoodDefinition;
 import com.lyingice.orefood.init.OreFoodItems;
 import java.util.Map;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.NbtUtils;
-import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 配方 JSON 的「语法糖」展开（Forge 1.20.1）。
@@ -80,6 +81,9 @@ public final class OreFoodRecipeSugar {
 
     /** 值是「单个配料」的字段名（锻造模板/基底/添加物）。 */
     private static final String[] SINGLE_INGREDIENTS = {"template", "base", "addition"};
+
+    /** 诊断用：把每次展开的产物 JSON 打出来（DEBUG 级，dev 运行默认可见）。 */
+    private static final Logger LOGGER = LoggerFactory.getLogger(OreFoodConstants.MOD_NAME);
 
     /**
      * 最近一次数据包重载用的注册表访问，由 {@code AddReloadListenerEvent} 写入。
@@ -148,11 +152,15 @@ public final class OreFoodRecipeSugar {
     }
 
     /**
-     * 展开产物：把定义 id 换成「真实物品 + NBT 定义」的完整物品栈 JSON。
+     * 展开产物：把定义 id 换成完整的物品栈 JSON。
      *
-     * <p>这里必须查注册表把定义<b>内容</b>取出来写进去——物品栈上的 NBT 存的是
-     * 完整定义而不是注册表 id（见 {@link OreFoodDefinition}），这样
-     * {@code OreFoodItem#getMaxDamage(ItemStack)} 之类拿不到注册表的地方才能取值。
+     * <p><b>这里刻意不自己拼 NBT，而是让 {@link OreFoodItems#stackFor} 造一个物品栈再整体
+     * 序列化。</b>「一块牛排长什么样」（定义 NBT + 名字 + 外观）只能有<b>一个</b>权威来源，
+     * 否则必然漂移——历史上就是这么坏的：创造栏走 {@code stackFor} 设了名字与
+     * {@code CustomModelData}，而配方产物是手写的 JSON、只抄了定义 NBT，
+     * 结果合成出来的牛排叫「矿物食品」、用的是默认贴图。
+     *
+     * <p>顺带的好处是配方产物与创造栏物品<b>逐字节一致</b>，数据包作者不用关心 NBT 细节。
      */
     private static void expandResult(JsonObject recipe, Registry<OreFoodDefinition> registry) {
         JsonElement result = recipe.get(RESULT);
@@ -170,7 +178,7 @@ public final class OreFoodRecipeSugar {
             return;
         }
 
-        recipe.add(RESULT, stackJson(definition));
+        recipe.add(RESULT, stackJson(id, definition));
     }
 
     /**
@@ -224,24 +232,24 @@ public final class OreFoodRecipeSugar {
     }
 
     /**
-     * 造出「真实物品 + NBT 定义」的完整物品栈 JSON。
+     * 用 {@link OreFoodItems#nbtFor} 拿到 NBT，再序列化成产物 JSON。
      *
-     * <p>原版 {@code CraftingHelper.getItemStack} 读的是 {@code item} 与
-     * {@code nbt} 两个字段，其中 {@code nbt} 是 <b>SNBT 字符串</b>（不是对象），
-     * 所以这里要把定义编码成 NBT 再转成 SNBT 文本。
+     * <p><b>刻意不调 {@code stackFor} 再读物品栈的 NBT</b>：配方 JSON 在反序列化之前就要
+     * 展开，那种时机不该构造 {@code ItemStack}（26.1.2 上会直接抛
+     * {@code NullPointerException: Components not bound yet}，见那边 {@code OreFoodItems}
+     * 的注释）。这里改成只取 NBT，三个平台保持同一套写法。
+     *
+     * <p>原版 {@code CraftingHelper.getItemStack} 读 {@code item} / {@code count} /
+     * {@code nbt} 三个字段，其中 {@code nbt} 是 <b>SNBT 字符串</b>（不是对象）。
      */
-    private static JsonObject stackJson(OreFoodDefinition definition) {
-        Tag encoded = OreFoodDefinition.CODEC
-                .encodeStart(NbtOps.INSTANCE, definition)
-                .getOrThrow(false, error -> {});
+    private static JsonObject stackJson(ResourceLocation id, OreFoodDefinition definition) {
+        CompoundTag tag = OreFoodItems.nbtFor(id, definition);
 
-        CompoundTag tag = new CompoundTag();
-        tag.put(OreFoodDefinition.STACK_TAG, encoded);
-
-        JsonObject stack = new JsonObject();
-        stack.addProperty(STACK_ID, OreFoodItems.ORE_FOOD.getId().toString());
-        stack.addProperty("nbt", NbtUtils.structureToSnbt(tag));
-        return stack;
+        JsonObject result = new JsonObject();
+        result.addProperty(STACK_ID, OreFoodItems.ORE_FOOD.getId().toString());
+        result.addProperty("nbt", NbtUtils.structureToSnbt(tag));
+        LOGGER.debug("[orefood] recipe sugar: result {} -> {}", id, result);
+        return result;
     }
 
     private OreFoodRecipeSugar() {

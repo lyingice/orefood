@@ -4,6 +4,7 @@ import com.lyingice.orefood.OreFoodConstants;
 import com.lyingice.orefood.data.OreFoodDefinition;
 import com.lyingice.orefood.item.OreFoodItem;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -85,23 +86,37 @@ public final class OreFoodItems {
     }
 
     /**
-     * 按定义造一个矿物牛排物品栈。
+     * 一块牛排该带哪些组件——「一块牛排长什么样」的<b>唯一</b>权威来源。
+     *
+     * <p><b>为什么单独提出来</b>：配方语法糖也要用它，而配方 JSON 是在
+     * {@code ModifyRecipeJsonsEvent} 里展开的——那个时机<b>不能构造 {@code ItemStack}</b>。
+     * 26.1.2 的 {@code ItemStack} 构造器会去读 {@code Holder.Reference#components()}，
+     * 而此时物品的组件还没绑定，直接抛
+     * {@code NullPointerException: Components not bound yet}（实测崩过，整个服务器起不来）。
+     * 所以这里返回组件补丁，由调用方决定是套到物品栈上还是直接编码成 JSON。
      *
      * @param id         定义 id，同时决定显示名（{@code item.<命名空间>.<路径>}）与外观
      * @param definition 牛排定义
      */
-    public static ItemStack stackFor(Identifier id, OreFoodDefinition definition) {
-        ItemStack stack = new ItemStack(ORE_FOOD.get());
-        stack.set(OreFoodComponents.DEFINITION.get(), definition);
-        stack.set(DataComponents.ITEM_NAME, Component.translatable(nameKey(id)));
+    public static DataComponentPatch componentsFor(Identifier id, OreFoodDefinition definition) {
+        DataComponentPatch.Builder builder = DataComponentPatch.builder();
+        builder.set(OreFoodComponents.DEFINITION.get(), definition);
+        builder.set(DataComponents.ITEM_NAME, Component.translatable(nameKey(id)));
         // 26.1.2 有原生的 ITEM_MODEL 组件，直接按定义 id 指向
         // assets/orefood/items/<路径>.json —— 比 custom_model_data 分发直观得多，
         // 也不需要数据包额外给出 model_data（那个字段是给 1.20.1 / 1.21.1 用的）。
-        stack.set(DataComponents.ITEM_MODEL, id);
+        builder.set(DataComponents.ITEM_MODEL, id);
         if (definition.enchantmentValue() > 0) {
             // Enchantable 的构造器要求 value > 0，所以 0 时不设组件。
-            stack.set(DataComponents.ENCHANTABLE, new Enchantable(definition.enchantmentValue()));
+            builder.set(DataComponents.ENCHANTABLE, new Enchantable(definition.enchantmentValue()));
         }
+        return builder.build();
+    }
+
+    /** 按定义造一个矿物牛排物品栈；组件取自 {@link #componentsFor}，与配方产物完全一致。 */
+    public static ItemStack stackFor(Identifier id, OreFoodDefinition definition) {
+        ItemStack stack = new ItemStack(ORE_FOOD.get());
+        stack.applyComponents(componentsFor(id, definition));
         return stack;
     }
 

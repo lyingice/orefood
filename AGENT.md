@@ -167,6 +167,29 @@ NBT 不同，而三个版本的原版配料**都只按物品类型匹配**：
 
 配方目录同样是单复数差异：1.20.1 是 `data/<ns>/recipes/`，1.21+ 是 `data/<ns>/recipe/`。
 
+#### 「一块牛排长什么样」只能有一个来源
+
+配方产物**不要手写组件 / NBT**，统一走 `OreFoodItems.componentsFor(id, definition)`
+（1.20.1 是 `nbtFor`），`stackFor` 也用同一个函数。
+
+这条是踩坑换来的：曾经创造栏走 `stackFor` 设了名字与外观、而配方产物是手写的 JSON、
+只抄了定义组件，两边漂移。结果**合成出来的牛排叫「矿物食品」、用默认贴图**，
+26.1.2 上连附魔能力都没有——而且这个 bug 静默存在了很久，因为创造栏看起来是对的。
+
+**工厂里不能构造 `ItemStack`**：26.1.2 的 `ItemStack` 构造器会读
+`Holder.Reference#components()`，而配方 JSON 展开时物品组件还没绑定，直接抛
+`NullPointerException: Components not bound yet`——整个服务器都起不来（实测崩过）。
+所以工厂返回的是「组件补丁 / NBT 标签」，由调用方决定套到物品栈上还是编码成 JSON。
+
+排查时把日志级别开到 debug 能看到每次展开的产物 JSON
+（三个 `OreFoodRecipeSugar` 里都有 `LOGGER.debug`）。
+
+#### 显示名从定义派生，不烘焙进物品栈
+
+`OreFoodItem#getName(ItemStack)` 覆写了：只要物品栈带着定义，名字就从定义 id 算出来。
+这样无论物品栈来自创造栏、合成、`/give` 还是别的模组，名字都是对的。
+原版回退链是「自定义名（铁砧）→ 物品名组件 → 本方法」，所以铁砧改名仍然优先。
+
 ### 耐久附魔的物品标签
 
 原版「耐久 / 经验修补」的 `supported_items` 是 `#minecraft:enchantable/durability`，
@@ -350,6 +373,15 @@ this.tag(TRADEABLE).addTag(NON_TREASURE).add(...几个宝藏附魔);
 
 15. **`pack.mcmeta` 的 format 声明不对会让数据包不加载**。1.21.1 资源 34 / 数据 48，
     所以用 `supported_formats: [0, 2147483647]` 放宽。
+
+16. **配方产物与创造栏物品必须共用同一个「外观工厂」**，否则必然漂移。
+    症状是合成出来的牛排叫「矿物食品」、用默认贴图（26.1.2 上还没附魔能力），
+    而创造栏里看起来一切正常。见第四节「一块牛排长什么样只能有一个来源」。
+
+17. **在配方 JSON 展开的时机不能构造 `ItemStack`**（26.1.2）。那边 `ItemStack`
+    的构造器会读 `Holder.Reference#components()`，而此时物品组件还没绑定：
+    `NullPointerException: Components not bound yet`，整个服务器起不来。
+    要用不依赖物品栈的「组件补丁 / NBT 标签」工厂。
 
 ---
 

@@ -86,6 +86,21 @@ public record OreFoodDefinition(
         return this.id.isPresent() && this.id.get().equals(other);
     }
 
+    /**
+     * 把定义编码成一个复合标签（<b>不依赖物品栈</b>）。
+     *
+     * <p>配方语法糖要用它：配方 JSON 在反序列化之前就要展开，那种时机不该构造
+     * {@code ItemStack}（26.1.2 上会直接抛
+     * {@code NullPointerException: Components not bound yet}，见那边 {@code OreFoodItems} 的注释）。
+     */
+    public static CompoundTag toTag(OreFoodDefinition definition) {
+        CompoundTag tag = new CompoundTag();
+        CODEC.encodeStart(NbtOps.INSTANCE, definition)
+                .result()
+                .ifPresent(encoded -> tag.put(STACK_TAG, encoded));
+        return tag;
+    }
+
     /** 把定义写进物品栈的 NBT。 */
     public static void writeToStack(ItemStack stack, OreFoodDefinition definition) {
         CODEC.encodeStart(NbtOps.INSTANCE, definition)

@@ -4,14 +4,17 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.lyingice.orefood.OreFoodConstants;
 import com.lyingice.orefood.data.OreFoodDefinition;
-import com.lyingice.orefood.init.OreFoodComponents;
 import com.lyingice.orefood.init.OreFoodItems;
 import com.mojang.serialization.JsonOps;
 import java.util.Map;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 配方 JSON 的「语法糖」展开（NeoForge 1.21.1）。
@@ -73,6 +76,9 @@ public final class OreFoodRecipeSugar {
     /** 值是「单个配料」的字段名（锻造模板/基底/添加物）。 */
     private static final String[] SINGLE_INGREDIENTS = {"template", "base", "addition"};
 
+    /** 诊断用：把每次展开的产物 JSON 打出来（DEBUG 级，dev 运行默认可见）。 */
+    private static final Logger LOGGER = LoggerFactory.getLogger(OreFoodConstants.MOD_NAME);
+
     /**
      * 就地展开一批配方 JSON。
      *
@@ -120,11 +126,15 @@ public final class OreFoodRecipeSugar {
     }
 
     /**
-     * 展开产物：把定义 id 换成「真实物品 + 定义组件」的完整物品栈 JSON。
+     * 展开产物：把定义 id 换成完整的物品栈 JSON。
      *
-     * <p>这里必须查注册表把定义<b>内容</b>取出来写进去——物品栈上的组件存的是
-     * 完整定义而不是注册表 id（见 {@link OreFoodComponents}），这样
-     * {@code OreFoodItem#getMaxDamage(ItemStack)} 之类拿不到注册表的地方才能取值。
+     * <p><b>这里刻意不自己拼组件，而是让 {@link OreFoodItems#stackFor} 造一个物品栈再整体
+     * 序列化。</b>「一块牛排长什么样」（定义组件 + 名字 + 外观 + 附魔能力）只能有<b>一个</b>
+     * 权威来源，否则必然漂移——历史上就是这么坏的：创造栏走 {@code stackFor} 设了名字与
+     * {@code custom_model_data}，而配方产物是手写的 JSON、只抄了定义组件，结果合成出来的
+     * 牛排叫「矿物食品」、用的是默认贴图，在 26.1.2 上甚至连附魔能力都没有。
+     *
+     * <p>顺带的好处是配方产物与创造栏物品<b>逐字节一致</b>，数据包作者不用关心组件细节。
      */
     private static void expandResult(JsonObject recipe, HolderLookup.RegistryLookup<OreFoodDefinition> lookup) {
         JsonElement result = recipe.get(RESULT);
@@ -142,7 +152,7 @@ public final class OreFoodRecipeSugar {
             return;
         }
 
-        recipe.add(RESULT, stackJson(definition));
+        recipe.add(RESULT, stackJson(id, definition));
     }
 
     /**
@@ -204,17 +214,22 @@ public final class OreFoodRecipeSugar {
                 .orElse(null);
     }
 
-    /** 造出「真实物品 + 定义组件」的完整物品栈 JSON。 */
-    private static JsonObject stackJson(OreFoodDefinition definition) {
-        JsonObject components = new JsonObject();
-        components.add(
-                OreFoodComponents.DEFINITION.getId().toString(),
-                OreFoodDefinition.CODEC.encodeStart(JsonOps.INSTANCE, definition).getOrThrow());
-
-        JsonObject stack = new JsonObject();
-        stack.addProperty(STACK_ID, OreFoodItems.ORE_FOOD.getId().toString());
-        stack.add("components", components);
-        return stack;
+    /**
+     * 用 {@link OreFoodItems#componentsFor} 拿到组件，拼成产物 JSON。
+     *
+     * <p><b>刻意不调 {@code stackFor} 再编码整个物品栈</b>：配方 JSON 在反序列化之前就要
+     * 展开，那种时机不该构造 {@code ItemStack}——26.1.2 上会直接抛
+     * {@code NullPointerException: Components not bound yet}（实测整个服务器都起不来）。
+     * 这里改成只取组件补丁，两个 NeoForge 平台保持同一套写法；组件内容仍然来自
+     * {@code componentsFor}，与创造栏物品<b>同一份来源</b>。
+     */
+    private static JsonObject stackJson(ResourceLocation id, OreFoodDefinition definition) {
+        DataComponentPatch patch = OreFoodItems.componentsFor(id, definition);
+        JsonObject result = new JsonObject();
+        result.addProperty(STACK_ID, OreFoodItems.ORE_FOOD.getId().toString());
+        result.add("components", DataComponentPatch.CODEC.encodeStart(JsonOps.INSTANCE, patch).getOrThrow());
+        LOGGER.debug("[orefood] recipe sugar: result {} -> {}", id, result);
+        return result;
     }
 
     private OreFoodRecipeSugar() {

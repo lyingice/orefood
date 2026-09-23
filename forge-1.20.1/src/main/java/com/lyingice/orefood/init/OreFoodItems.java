@@ -4,6 +4,7 @@ import com.lyingice.orefood.OreFoodConstants;
 import com.lyingice.orefood.data.OreFoodDefinition;
 import com.lyingice.orefood.item.OreFoodItem;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.food.FoodProperties;
@@ -86,21 +87,33 @@ public final class OreFoodItems {
     }
 
     /**
-     * 按定义造一个矿物牛排物品栈。
+     * 一块牛排该带哪些 NBT——「一块牛排长什么样」的<b>唯一</b>权威来源。
+     *
+     * <p><b>为什么单独提出来</b>：配方语法糖也要用它，而配方 JSON 在反序列化之前就要展开，
+     * 那种时机不该构造 {@code ItemStack}（26.1.2 上会直接抛
+     * {@code NullPointerException: Components not bound yet}，见那边的注释）。
      *
      * @param id         定义 id，同时决定显示名（{@code item.<命名空间>.<路径>}）
      * @param definition 牛排定义
      */
-    public static ItemStack stackFor(ResourceLocation id, OreFoodDefinition definition) {
-        ItemStack stack = new ItemStack(ORE_FOOD.get());
-        OreFoodDefinition.writeToStack(stack, definition);
+    public static CompoundTag nbtFor(ResourceLocation id, OreFoodDefinition definition) {
+        CompoundTag tag = OreFoodDefinition.toTag(definition);
         // 1.20.1 没有 ITEM_NAME 数据组件，自定义名称走 NBT 的 display.Name。
-        stack.setHoverName(Component.translatable(nameKey(id)));
+        CompoundTag display = new CompoundTag();
+        display.putString("Name", Component.Serializer.toJson(Component.translatable(nameKey(id))));
+        tag.put("display", display);
         if (definition.modelData() > 0) {
             // 1.20.1 也没有 ITEM_MODEL 组件，外观靠 NBT 的 CustomModelData +
             // 模型文件里的 overrides 列表来切（见 assets/orefood/models/item/ore_food.json）。
-            stack.getOrCreateTag().putInt("CustomModelData", definition.modelData());
+            tag.putInt("CustomModelData", definition.modelData());
         }
+        return tag;
+    }
+
+    /** 按定义造一个矿物牛排物品栈；NBT 取自 {@link #nbtFor}，与配方产物完全一致。 */
+    public static ItemStack stackFor(ResourceLocation id, OreFoodDefinition definition) {
+        ItemStack stack = new ItemStack(ORE_FOOD.get());
+        stack.setTag(nbtFor(id, definition));
         return stack;
     }
 

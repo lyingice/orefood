@@ -2,6 +2,8 @@ package com.lyingice.orefood.item;
 
 import com.lyingice.orefood.data.OreFoodDefinition;
 import com.lyingice.orefood.init.OreFoodComponents;
+import com.lyingice.orefood.init.OreFoodItems;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
@@ -30,6 +32,24 @@ public class OreFoodItem extends Item {
      */
     public static OreFoodDefinition definitionOf(ItemStack stack) {
         return stack.get(OreFoodComponents.DEFINITION.get());
+    }
+
+    /**
+     * 按定义给出显示名。
+     *
+     * <p>名字<b>从定义 id 派生</b>，而不是必须烘焙进物品栈的组件。这样无论物品栈是怎么来的
+     * ——创造栏、合成产物、{@code /give}、别的模组发的——只要带着定义就显示正确名字。
+     * 曾经创造栏设名字而配方产物只抄了定义组件，结果合成出来的牛排叫「矿物食品」。
+     *
+     * <p>原版的回退链是「自定义名（铁砧）→ 物品名组件 → 本方法」，所以铁砧改名仍然优先。
+     */
+    @Override
+    public Component getName(ItemStack stack) {
+        OreFoodDefinition definition = definitionOf(stack);
+        if (definition != null && definition.id().isPresent()) {
+            return Component.translatable(OreFoodItems.nameKey(definition.id().get()));
+        }
+        return super.getName(stack);
     }
 
     /**
