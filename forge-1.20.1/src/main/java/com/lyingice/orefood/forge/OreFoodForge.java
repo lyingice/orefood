@@ -4,6 +4,9 @@ import com.lyingice.orefood.OreFoodConstants;
 import com.lyingice.orefood.data.OreFoodDefinition;
 import com.lyingice.orefood.init.OreFoodEnchantments;
 import com.lyingice.orefood.init.OreFoodItems;
+import net.minecraft.core.Registry;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -51,6 +54,15 @@ public final class OreFoodForge {
 
         // 让数据包里定义的每一种牛排都出现在创造模式「食物与饮品」页。
         modEventBus.addListener(OreFoodItems::addToCreativeTab);
+
+        // 启动诊断：把动态注册表里实际加载到的牛排定义打进日志。
+        // 数据包路径或 Codec 写错时原版是**静默**返回空注册表的（不会抛异常），
+        // 有这行日志就能一眼看出「数据包到底生效了没有」。
+        MinecraftForge.EVENT_BUS.addListener((ServerStartedEvent event) -> {
+            Registry<OreFoodDefinition> registry = event.getServer().registryAccess()
+                    .registryOrThrow(OreFoodDefinition.REGISTRY_KEY);
+            LOGGER.info("Loaded {} ore food definition(s): {}", registry.size(), registry.keySet());
+        });
 
         LOGGER.info("{} v{} initialized on Forge (Minecraft 1.20.1); shared package {}",
                 OreFoodConstants.MOD_NAME,

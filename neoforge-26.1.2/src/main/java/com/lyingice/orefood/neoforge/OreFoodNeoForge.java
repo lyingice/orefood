@@ -4,8 +4,11 @@ import com.lyingice.orefood.OreFoodConstants;
 import com.lyingice.orefood.data.OreFoodDefinition;
 import com.lyingice.orefood.init.OreFoodComponents;
 import com.lyingice.orefood.init.OreFoodItems;
+import net.minecraft.core.Registry;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.registries.DataPackRegistryEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +54,15 @@ public final class OreFoodNeoForge {
 
         // 让数据包里定义的每一种牛排都出现在创造模式「食物与饮品」页。
         modEventBus.addListener(OreFoodItems::addToCreativeTab);
+
+        // 启动诊断：把动态注册表里实际加载到的牛排定义打进日志。
+        // 数据包路径或 Codec 写错时原版是**静默**返回空注册表的（不会抛异常），
+        // 有这行日志就能一眼看出「数据包到底生效了没有」。
+        NeoForge.EVENT_BUS.addListener((ServerStartedEvent event) -> {
+            Registry<OreFoodDefinition> registry = event.getServer().registryAccess()
+                    .lookupOrThrow(OreFoodDefinition.REGISTRY_KEY);
+            LOGGER.info("Loaded {} ore food definition(s): {}", registry.size(), registry.keySet());
+        });
 
         LOGGER.info("{} v{} initialized on NeoForge (Minecraft 26.1.2); shared package {}",
                 OreFoodConstants.MOD_NAME,

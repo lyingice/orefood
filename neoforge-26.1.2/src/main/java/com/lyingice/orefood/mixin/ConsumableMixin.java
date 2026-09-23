@@ -38,7 +38,14 @@ public abstract class ConsumableMixin {
             "onConsume(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/LivingEntity;"
                     + "Lnet/minecraft/world/item/ItemStack;)Lnet/minecraft/world/item/ItemStack;";
 
-    /** 在吃下的一刻结算营养、定义自带效果与食物附魔效果。 */
+    /**
+     * 在吃下的一刻结算营养、定义自带效果与食物附魔效果。
+     *
+     * <p>{@code CallbackInfoReturnable} 参数<b>必须保留</b>，即使这里完全不使用它：
+     * Mixin 会校验处理器描述符，目标方法有返回值时缺了这个参数会直接抛
+     * {@code InvalidInjectionException: Invalid descriptor ...}，
+     * 而且是<b>运行期</b>才炸（编译期看不出来）。
+     */
     @Inject(method = ON_CONSUME_METHOD, at = @At("HEAD"))
     private void orefood$applyOreFoodEffects(
             Level level, LivingEntity user, ItemStack stack,
