@@ -14,7 +14,7 @@ version="${mod_version}"
 displayName="${mod_name}"
 authors="${mod_authors}"
 description='''${mod_description}'''
-
+logoFile="orefood.png"
 # Mixin 配置：NeoForge 在元数据里声明。
 # 注意 Forge 1.20.1 的 mods.toml **不支持** [[mixins]]（写了会被静默忽略），
 # 那边必须改用 JAR 清单的 MixinConfigs 属性——见 forge-1.20.1/build.gradle。
