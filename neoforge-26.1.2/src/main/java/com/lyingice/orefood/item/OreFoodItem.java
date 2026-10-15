@@ -1,70 +1,61 @@
 package com.lyingice.orefood.item;
 
 import com.lyingice.orefood.data.OreFoodDefinition;
-import com.lyingice.orefood.init.OreFoodComponents;
-import com.lyingice.orefood.init.OreFoodItems;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 矿物食品——全模组唯一的物品，所有牛排都是它的带组件变体（NeoForge 26.1.2）。
+ * 矿物牛排物品（NeoForge 26.1.2）。
  *
- * <p>「哪种牛排」由物品栈上的 {@code orefood:definition} 组件决定。
+ * <p>每一种牛排都是这个类的<b>独立实例</b>，构造时带上自己的 {@link OreFoodDefinition}
+ * （见 {@code OreFoodItems}）。全模组的食用结算、耐久消耗、提示框都通过
+ * {@link #definitionOf(ItemStack)} 取定义，因此<b>任何</b>继承本类的物品
+ * ——包括 KubeJS 脚本注册的——都会自动拥有完整的矿物牛排行为。
  *
- * <p><b>26.1.2 与 1.21.1 的一处实质差异</b>：附魔能力不再走
- * {@code Item#getEnchantmentValue(ItemStack)}——26.1.2 把它改成了
- * {@code minecraft:enchantable} <b>数据组件</b>（{@code DataComponents.ENCHANTABLE}），
- * 所以这边<b>没有</b>可按物品栈覆写的入口。定义里的 {@code enchantment_value}
- * 由 {@code OreFoodItems#stackFor} 在造物品栈时写进组件（组件本身就是 per-stack 的，
- * 所以「每种牛排附魔能力不同」依然成立）。
+ * <p><b>与 1.21.1 的一处实质差异</b>：附魔能力不再走
+ * {@code Item#getEnchantmentValue(ItemStack)} —— 26.1.2 把它改成了
+ * {@code minecraft:enchantable} <b>数据组件</b>，所以这边<b>没有</b>可按物品栈覆写的入口，
+ * 由 {@code OreFoodItems} 在注册物品时写进默认组件。
+ *
+ * <p><b>名字不再需要覆写</b>：1.1.x 里五种牛排共用一个物品，只能从定义 id 派生显示名；
+ * 现在每种牛排是独立物品，原版按物品描述 id（{@code item.orefood.<路径>}）取名即可。
  */
 public class OreFoodItem extends Item {
 
-    public OreFoodItem(Item.Properties properties) {
+    private final OreFoodDefinition definition;
+
+    public OreFoodItem(Item.Properties properties, OreFoodDefinition definition) {
         super(properties);
+        this.definition = definition;
+    }
+
+    /** @return 这个物品自带的牛排定义（永远非 {@code null}）。 */
+    public OreFoodDefinition definition() {
+        return this.definition;
     }
 
     /**
-     * 取物品栈上的牛排定义。
+     * 取物品栈对应的牛排定义。
      *
-     * @return 定义；若该物品栈没有定义组件（例如用 {@code /give} 直接给的空壳），返回 {@code null}
+     * @return 定义；该物品不是矿物牛排时返回 {@code null}（原版食物与别的模组物品照旧）
      */
     public static OreFoodDefinition definitionOf(ItemStack stack) {
-        return stack.get(OreFoodComponents.DEFINITION.get());
-    }
-
-    /**
-     * 按定义给出显示名。
-     *
-     * <p>名字<b>从定义 id 派生</b>，而不是必须烘焙进物品栈的组件。这样无论物品栈是怎么来的
-     * ——创造栏、合成产物、{@code /give}、别的模组发的——只要带着定义就显示正确名字。
-     * 曾经创造栏设名字而配方产物只抄了定义组件，结果合成出来的牛排叫「矿物食品」。
-     *
-     * <p>原版的回退链是「自定义名（铁砧）→ 物品名组件 → 本方法」，所以铁砧改名仍然优先。
-     */
-    @Override
-    public Component getName(ItemStack stack) {
-        OreFoodDefinition definition = definitionOf(stack);
-        if (definition != null && definition.id().isPresent()) {
-            return Component.translatable(OreFoodItems.nameKey(definition.id().get()));
-        }
-        return super.getName(stack);
+        return stack.getItem() instanceof OreFoodItem food ? food.definition : null;
     }
 
     /**
      * 按定义给出最大耐久。
      *
-     * <p>定义里 {@code durability} 为 0 表示<b>没有耐久设定</b>，此时退回物品的默认值。
-     * 那种牛排既不消耗耐久也不消耗本体（见 {@code OreFoodConsume#consume}），
-     * 所以这里的返回值不会被用到——伤害值恒为 0，耐久条与「耐久 x/y」提示行都不会出现。
+     * <p>注册时的 {@code durability(1)} 只为让 {@code MAX_DAMAGE} / {@code DAMAGE} 组件存在，
+     * 从而让 {@code ItemStack#isDamageableItem()} 返回 true；真正的上限在这里按定义给出。
+     *
+     * <p>定义里 {@code durability} 为 0 表示<b>没有耐久设定</b>，那时既不消耗耐久也不消耗本体
+     * （见 {@code OreFoodConsume#consume}），所以这里的返回值不会被用到。
      */
     @Override
     public int getMaxDamage(ItemStack stack) {
-        OreFoodDefinition definition = definitionOf(stack);
-        if (definition != null && !definition.infiniteDurability()) {
-            return definition.durability();
-        }
-        return super.getMaxDamage(stack);
+        return this.definition.infiniteDurability()
+                ? super.getMaxDamage(stack)
+                : this.definition.durability();
     }
 }

@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "ore_food",
+  "key": {
+    "#": "minecraft:iron_ingot",
+    "X": "orefood:copper_bread"
+  },
+  "pattern": [ "###", "#X#", "###" ],
+  "result": { "id": "orefood:iron_bread" }
+}

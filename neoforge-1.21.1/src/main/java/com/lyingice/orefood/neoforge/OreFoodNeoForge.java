@@ -2,9 +2,6 @@ package com.lyingice.orefood.neoforge;
 
 import com.lyingice.orefood.FoodEnchantment;
 import com.lyingice.orefood.OreFoodConstants;
-import com.lyingice.orefood.crafting.OreFoodIngredients;
-import com.lyingice.orefood.data.OreFoodDefinition;
-import com.lyingice.orefood.init.OreFoodComponents;
 import com.lyingice.orefood.init.OreFoodItems;
 import java.util.stream.Collectors;
 import net.minecraft.core.Registry;
@@ -16,7 +13,6 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
-import net.neoforged.neoforge.registries.DataPackRegistryEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,12 +21,15 @@ import org.slf4j.LoggerFactory;
  *
  * <p>这里只做装配，业务逻辑分别在：
  * <ul>
- *   <li>{@link OreFoodItems}：唯一的物品 {@code orefood:ore_food}；</li>
- *   <li>{@link OreFoodComponents}：携带牛排定义的数据组件；</li>
+ *   <li>{@link OreFoodItems}：五种牛排物品（各自一个真实物品 id）；</li>
  *   <li>{@code com.lyingice.orefood.logic.OreFoodConsume} 配合
  *       {@code com.lyingice.orefood.mixin.LivingEntityEatMixin}：食用结算与耐久消耗；</li>
  *   <li>{@code com.lyingice.orefood.client.OreFoodTooltip}：提示框。</li>
  * </ul>
+ *
+ * <p><b>1.2.0 删掉的东西</b>：动态注册表（{@code DataPackRegistryEvent}）、数据组件
+ * （{@code OreFoodComponents}）、自定义配料、配方语法糖与 JEI 变体插件——五种牛排
+ * 改真物品后这些全都不需要了。
  *
  * <p><b>本类绝不能直接引用任何客户端专属类。</b>NeoForge 没有 Forge 1.20.1 的
  * {@code clientSideOnly} 开关，{@code @Mod} 类在专用服务端上照样被加载；
@@ -44,29 +43,15 @@ public final class OreFoodNeoForge {
 
     public OreFoodNeoForge(IEventBus modEventBus) {
         OreFoodItems.register(modEventBus);
-        OreFoodComponents.register(modEventBus);
-        // 自定义配方配料（用来表达「中间那一格必须是某一种牛排」）。
-        OreFoodIngredients.register(modEventBus);
 
-        // 自定义动态注册表：牛排定义由数据包写在 data/<pack>/orefood/ore_food/*.json。
-        // 第三个参数是「网络 codec」——注意它的类型是 Codec 而不是 StreamCodec
-        // （原版同步走 NBT）。提供它就意味着「客户端也必须装本模组」，
-        // 创造模式标签页才能在客户端读到数据包定义的每一种牛排。
-        modEventBus.addListener((DataPackRegistryEvent.NewRegistry event) -> event.dataPackRegistry(
-                OreFoodDefinition.REGISTRY_KEY,
-                OreFoodDefinition.CODEC,
-                OreFoodDefinition.CODEC));
-
-        // 让数据包里定义的每一种牛排都出现在创造模式「食物与饮品」页。
+        // 让五种牛排出现在创造模式「食物与饮品」页。
         modEventBus.addListener(OreFoodItems::addToCreativeTab);
 
-        // 启动诊断：把动态注册表里实际加载到的牛排定义打进日志。
-        // 数据包路径或 Codec 写错时原版是**静默**返回空注册表的（不会抛异常），
-        // 有这行日志就能一眼看出「数据包到底生效了没有」。
+        // 启动自检：打印五种牛排的实际定义，以及每个附魔实际挂在哪些原版附魔标签下。
+        // 数值现在写在代码里（编译期就能发现笔误），这行日志主要用于
+        // 「加了新口味之后确认它真的注册上、数值真的是想要的」。
         NeoForge.EVENT_BUS.addListener((ServerStartedEvent event) -> {
-            Registry<OreFoodDefinition> registry = event.getServer().registryAccess()
-                    .registryOrThrow(OreFoodDefinition.REGISTRY_KEY);
-            LOGGER.info("Loaded {} ore food definition(s): {}", registry.size(), registry.keySet());
+            OreFoodItems.ALL.forEach(item -> LOGGER.info("  {} -> {}", item.getId(), item.get().definition()));
             logEnchantmentEntries(event);
         });
 

@@ -1,0 +1,242 @@
+<template>
+  <style>
+    @font-face { font-family: "Newsreader"; src: url("assets/fonts/Newsreader_NotoSerifSC.ttf") format("truetype"); font-weight: 400; font-display: block; }
+    @font-face { font-family: "Hanken Grotesk"; src: url("assets/fonts/Hanken_Grotesk_NotoSansSC.ttf") format("truetype"); font-weight: 400 700; font-display: block; }
+    @font-face { font-family: "DM Mono"; src: url("assets/fonts/DM_Mono_Consolas.ttf") format("truetype"); font-weight: 400; font-display: block; }
+
+    /* Every authored class carries the literal 04-enchants- frame prefix. A CSS identifier
+       cannot begin with a digit, so each rule addresses the token as an attribute selector
+       ([class~="04-enchants-x"]) — plain CSS at class-level specificity, no escaping, and
+       GSAP uses the very same selector strings. */
+
+    #root {
+      position: absolute; inset: 0; width: 1920px; height: 1080px;
+      container-type: size; overflow: hidden;
+      font-family: "Hanken Grotesk", sans-serif; color: #1F2BE0;
+    }
+
+    /* ---- permanent furniture: graph grid + framed content area ---- */
+    [class~="04-enchants-ground"] {
+      position: absolute; inset: 0; background-color: #F0EBDE;
+      background-image:
+        linear-gradient(to right, rgba(31,43,224,0.13) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(31,43,224,0.13) 1px, transparent 1px);
+      background-size: 2cqw 2cqw;
+    }
+    [class~="04-enchants-rule"] { position: absolute; background: #1F2BE0; height: 0.12cqw; }
+    [class~="04-enchants-roof"] { left: 4cqw; right: auto; top: 3cqw; bottom: auto; width: 92cqw; }
+    [class~="04-enchants-floor"] { left: 4cqw; right: auto; top: 45cqw; bottom: auto; width: 92cqw; }
+    [class~="04-enchants-px"] { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+
+    /* ---- left column: the count, then the container, then the food it sticks to ---- */
+    [class~="04-enchants-kicker"] {
+      position: absolute; left: 4.6cqw; right: auto; top: 4.1cqw; bottom: auto;
+      font-size: 15px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+    }
+    [class~="04-enchants-num"] {
+      position: absolute; left: 4.2cqw; right: auto; top: 9.0cqw; bottom: auto;
+      font-family: "Newsreader", serif; font-size: 8.4cqw; line-height: 0.9;
+      letter-spacing: -0.015em;
+    }
+    [class~="04-enchants-numlabel"] {
+      position: absolute; left: 13.6cqw; right: auto; top: 15.6cqw; bottom: auto;
+      font-size: 15px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+    }
+    [class~="04-enchants-cells"] { position: absolute; left: 4.6cqw; right: auto; top: 19.2cqw; bottom: auto; width: 15.4cqw; height: 1.4cqw; }
+    [class~="04-enchants-cell"] { position: absolute; top: 0; width: 2.6cqw; height: 1.4cqw; background: rgba(31,43,224,0.10); }
+    [class~="04-enchants-cell-0"] { left: 0; }
+    [class~="04-enchants-cell-1"] { left: 3.2cqw; }
+    [class~="04-enchants-cell-2"] { left: 6.4cqw; }
+    [class~="04-enchants-cell-3"] { left: 9.6cqw; }
+    [class~="04-enchants-cell-4"] { left: 12.8cqw; }
+    [class~="04-enchants-cellfill"] { position: absolute; inset: 0; background: #1F2BE0; transform-origin: left center; }
+
+    [class~="04-enchants-book"] { position: absolute; left: 15.4cqw; right: auto; top: 6.6cqw; bottom: auto; width: 11.5cqw; height: 11.5cqw; }
+    [class~="04-enchants-link"] { position: absolute; left: 26.45cqw; right: auto; top: 18.6cqw; bottom: auto; width: 0.14cqw; height: 3.2cqw; background: #1F2BE0; }
+    [class~="04-enchants-link"]::after {
+      content: ""; position: absolute; left: -0.58cqw; top: 3.2cqw;
+      border-left: 0.65cqw solid transparent; border-right: 0.65cqw solid transparent;
+      border-top: 0.9cqw solid #1F2BE0;
+    }
+    [class~="04-enchants-food"] { position: absolute; left: 22.9cqw; right: auto; top: 22.2cqw; bottom: auto; width: 7.5cqw; height: 7.5cqw; }
+    [class~="04-enchants-foodlabel"] {
+      position: absolute; left: 22.9cqw; right: auto; top: 30.4cqw; bottom: auto;
+      font-size: 15px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+    }
+
+    /* ---- right column: the ledger of five entries ---- */
+    [class~="04-enchants-rail"] { position: absolute; left: 36.4cqw; right: auto; top: 10.4cqw; bottom: auto; width: 0.12cqw; height: 30cqw; background: #1F2BE0; }
+    [class~="04-enchants-topbar"] { left: 38.6cqw; right: auto; top: 9.6cqw; bottom: auto; width: 44cqw; }
+    [class~="04-enchants-head"] { position: absolute; left: 38.6cqw; right: auto; top: 6.5cqw; bottom: auto; width: 44cqw; height: 2.8cqw; }
+    [class~="04-enchants-headname"] {
+      position: absolute; left: 0; top: 0;
+      font-family: "Newsreader", serif; font-size: 2.5cqw; line-height: 1.1; letter-spacing: -0.004em;
+    }
+    [class~="04-enchants-headtag"] {
+      position: absolute; right: 0; top: 0.75cqw;
+      font-family: "DM Mono", monospace; font-size: 13px; letter-spacing: 0.06em;
+    }
+
+    [class~="04-enchants-row"] {
+      position: absolute; left: 38.6cqw; right: auto; top: auto; bottom: auto; width: 44cqw; height: 6cqw;
+      border-bottom: 0.06cqw solid rgba(31,43,224,0.18);
+    }
+    [class~="04-enchants-row-1"] { top: 10.4cqw; }
+    [class~="04-enchants-row-2"] { top: 16.4cqw; }
+    [class~="04-enchants-row-3"] { top: 22.4cqw; }
+    [class~="04-enchants-row-4"] { top: 28.4cqw; }
+    [class~="04-enchants-row-5"] { top: 34.4cqw; }
+
+    [class~="04-enchants-idx"] { position: absolute; left: 0; top: 0.5cqw; font-family: "DM Mono", monospace; font-size: 13px; letter-spacing: 0.06em; }
+    [class~="04-enchants-icon"] { position: absolute; left: 3.4cqw; top: 0.55cqw; width: 4.4cqw; height: 4.4cqw; border: 0.12cqw solid #1F2BE0; background: rgba(240,235,222,0.92); }
+    [class~="04-enchants-icon"] img { position: absolute; left: 0.535cqw; top: 0.535cqw; width: 3.33cqw; height: 3.33cqw; object-fit: contain; image-rendering: pixelated; }
+    [class~="04-enchants-name"] { position: absolute; left: 11cqw; top: 0.5cqw; font-family: "Newsreader", serif; font-size: 2.15cqw; line-height: 1.05; letter-spacing: -0.004em; }
+    [class~="04-enchants-desc"] { position: absolute; left: 11.3cqw; top: 3.7cqw; font-size: 14px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; }
+
+    /* ---- the one treasure entry ---- */
+    [class~="04-enchants-star"] { position: absolute; left: 73.4cqw; right: auto; top: 36cqw; bottom: auto; width: 3.4cqw; height: 3.4cqw; }
+    [class~="04-enchants-starlabel"] {
+      position: absolute; left: 77.4cqw; right: auto; top: 37cqw; bottom: auto;
+      font-size: 14px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+    }
+
+    /* ---- the push out of the frame ---- */
+    [class~="04-enchants-push"] { left: 60cqw; right: auto; top: 42.1cqw; bottom: auto; width: 28cqw; }
+    [class~="04-enchants-pushhead"] {
+      position: absolute; left: 88.1cqw; right: auto; top: 41.55cqw; bottom: auto;
+      border-left: 1cqw solid #1F2BE0; border-top: 0.55cqw solid transparent; border-bottom: 0.55cqw solid transparent;
+    }
+    [class~="04-enchants-page"] {
+      position: absolute; left: auto; right: 4.6cqw; top: 41.6cqw; bottom: auto;
+      font-family: "DM Mono", monospace; font-size: 13px; letter-spacing: 0.06em;
+    }
+  </style>
+
+  <div id="root" data-composition-id="04-enchants" data-width="1920" data-height="1080">
+    <div class="clip 04-enchants-ground" data-start="0" data-duration="8.4" data-track-index="0"></div>
+    <div class="clip 04-enchants-rule 04-enchants-roof" data-start="0" data-duration="8.4" data-track-index="1"></div>
+    <div class="clip 04-enchants-rule 04-enchants-floor" data-start="0" data-duration="8.4" data-track-index="2"></div>
+
+    <div class="clip 04-enchants-book" data-start="0" data-duration="8.4" data-track-index="3">
+      <img class="04-enchants-px" src="assets/px/enchanted_book.png" alt="" />
+    </div>
+
+    <div class="clip 04-enchants-num" data-start="0" data-duration="8.4" data-track-index="4">5</div>
+    <div class="clip 04-enchants-kicker" data-start="0.4" data-duration="8" data-track-index="5">OreFood &nbsp;·&nbsp; 附魔</div>
+    <div class="clip 04-enchants-numlabel" data-start="1.35" data-duration="7.05" data-track-index="6">食物附魔</div>
+
+    <div class="clip 04-enchants-cells" data-start="1.7" data-duration="6.7" data-track-index="7">
+      <div class="04-enchants-cell 04-enchants-cell-0"><div class="04-enchants-cellfill"></div></div>
+      <div class="04-enchants-cell 04-enchants-cell-1"><div class="04-enchants-cellfill"></div></div>
+      <div class="04-enchants-cell 04-enchants-cell-2"><div class="04-enchants-cellfill"></div></div>
+      <div class="04-enchants-cell 04-enchants-cell-3"><div class="04-enchants-cellfill"></div></div>
+      <div class="04-enchants-cell 04-enchants-cell-4"><div class="04-enchants-cellfill"></div></div>
+    </div>
+
+    <div class="clip 04-enchants-link" data-start="2.35" data-duration="6.05" data-track-index="8"></div>
+    <div class="clip 04-enchants-food" data-start="2" data-duration="6.4" data-track-index="9">
+      <img class="04-enchants-px" src="assets/px/netherite_beef.png" alt="" />
+    </div>
+    <div class="clip 04-enchants-foodlabel" data-start="2.65" data-duration="5.75" data-track-index="10">食物限定</div>
+
+    <div class="clip 04-enchants-rail" data-start="3.3" data-duration="5.1" data-track-index="11"></div>
+    <div class="clip 04-enchants-rule 04-enchants-topbar" data-start="3.4" data-duration="5" data-track-index="12"></div>
+    <div class="clip 04-enchants-head" data-start="3.55" data-duration="4.85" data-track-index="13">
+      <div class="04-enchants-headname">条目</div>
+      <div class="04-enchants-headtag">01 / 05</div>
+    </div>
+
+    <div class="clip 04-enchants-row 04-enchants-row-1" data-start="4.15" data-duration="4.25" data-track-index="14">
+      <div class="04-enchants-idx">01</div>
+      <div class="04-enchants-icon"><img src="assets/px/resistance.png" alt="" /></div>
+      <div class="04-enchants-name">抗性</div>
+      <div class="04-enchants-desc">RESISTANCE</div>
+    </div>
+    <div class="clip 04-enchants-row 04-enchants-row-2" data-start="4.53" data-duration="3.87" data-track-index="15">
+      <div class="04-enchants-idx">02</div>
+      <div class="04-enchants-icon"><img src="assets/px/regeneration.png" alt="" /></div>
+      <div class="04-enchants-name">再生</div>
+      <div class="04-enchants-desc">REGENERATION</div>
+    </div>
+    <div class="clip 04-enchants-row 04-enchants-row-3" data-start="4.91" data-duration="3.49" data-track-index="16">
+      <div class="04-enchants-idx">03</div>
+      <div class="04-enchants-icon"><img src="assets/px/strength.png" alt="" /></div>
+      <div class="04-enchants-name">力量</div>
+      <div class="04-enchants-desc">STRENGTH</div>
+    </div>
+    <div class="clip 04-enchants-row 04-enchants-row-4" data-start="5.29" data-duration="3.11" data-track-index="17">
+      <div class="04-enchants-idx">04</div>
+      <div class="04-enchants-icon"><img src="assets/px/speed.png" alt="" /></div>
+      <div class="04-enchants-name">迅捷</div>
+      <div class="04-enchants-desc">SPEED</div>
+    </div>
+    <div class="clip 04-enchants-row 04-enchants-row-5" data-start="5.67" data-duration="2.73" data-track-index="18">
+      <div class="04-enchants-idx">05</div>
+      <div class="04-enchants-icon"><img src="assets/px/saturation.png" alt="" /></div>
+      <div class="04-enchants-name">盛宴</div>
+      <div class="04-enchants-desc">SATURATION</div>
+    </div>
+
+    <div class="clip 04-enchants-star" data-start="6.5" data-duration="1.9" data-track-index="19">
+      <img class="04-enchants-px" src="assets/px/nether_star.png" alt="" />
+    </div>
+    <div class="clip 04-enchants-starlabel" data-start="6.72" data-duration="1.68" data-track-index="20">宝藏</div>
+
+    <div class="clip 04-enchants-rule 04-enchants-push" data-start="7.3" data-duration="1.1" data-track-index="21"></div>
+    <div class="clip 04-enchants-pushhead" data-start="7.5" data-duration="0.9" data-track-index="22"></div>
+    <div class="clip 04-enchants-page" data-start="0.95" data-duration="7.45" data-track-index="23">04 / 09</div>
+  </div>
+
+  <script src="assets/vendor/gsap.min.js"></script>
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+      var root = document.querySelector('[data-composition-id="04-enchants"]') || document.getElementById("root");
+      var EASE = "power3.out";
+
+      function all(name) {
+        return Array.prototype.slice.call(root.querySelectorAll('[class~="04-enchants-' + name + '"]'));
+      }
+
+      /* Scene 1 (0.0-1.6s) - cold open: the book as the container, the count as the hero */
+      tl.fromTo(all("book"), { opacity: 0, scale: 0.86, y: 24, transformOrigin: "50% 50%" },
+        { opacity: 1, scale: 1, y: 0, duration: 0.62, ease: EASE }, 0.02);
+      tl.fromTo(all("roof"), { scaleX: 0, transformOrigin: "left center" }, { scaleX: 1, duration: 0.8, ease: EASE }, 0.05);
+      tl.fromTo(all("num"), { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.64, ease: EASE }, 0.18);
+      tl.fromTo(all("floor"), { scaleX: 0, transformOrigin: "left center" }, { scaleX: 1, duration: 0.8, ease: EASE }, 0.24);
+      tl.fromTo(all("kicker"), { opacity: 0, y: -12 }, { opacity: 1, y: 0, duration: 0.45, ease: EASE }, 0.46);
+      tl.fromTo(all("page"), { opacity: 0 }, { opacity: 1, duration: 0.4, ease: EASE }, 0.95);
+
+      /* Scene 2 (1.4-3.2s) - it only ever sticks to food */
+      tl.fromTo(all("numlabel"), { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.5, ease: EASE }, 1.35);
+      tl.fromTo(all("cells"), { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.45, ease: EASE }, 1.7);
+      tl.fromTo(all("food"), { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.55, ease: EASE }, 2.0);
+      tl.fromTo(all("link"), { scaleY: 0, transformOrigin: "top center" }, { scaleY: 1, duration: 0.45, ease: EASE }, 2.35);
+      tl.fromTo(all("foodlabel"), { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45, ease: EASE }, 2.65);
+
+      /* Scene 3 (3.3-6.6s) - the ledger opens, one entry at a time */
+      tl.fromTo(all("rail"), { scaleY: 0, transformOrigin: "top center" }, { scaleY: 1, duration: 0.9, ease: EASE }, 3.3);
+      tl.fromTo(all("topbar"), { scaleX: 0, transformOrigin: "left center" }, { scaleX: 1, duration: 0.7, ease: EASE }, 3.4);
+      tl.fromTo(all("head"), { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: 0.5, ease: EASE }, 3.55);
+
+      var rows = all("row"), fills = all("cellfill"), descs = all("desc");
+      for (var i = 0; i < 5; i++) {
+        var at = 4.15 + i * 0.38;
+        tl.fromTo(rows[i], { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.55, ease: EASE }, at);
+        tl.fromTo(fills[i], { scaleX: 0, transformOrigin: "left center" }, { scaleX: 1, duration: 0.4, ease: EASE }, at + 0.14);
+        tl.fromTo(descs[i], { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.42, ease: EASE }, at + 0.22);
+      }
+
+      /* Scene 4 (6.4-8.4s) - the treasure mark, then the push forward */
+      tl.fromTo(all("star"), { opacity: 0, scale: 0.55, transformOrigin: "50% 50%" },
+        { opacity: 1, scale: 1, duration: 0.55, ease: EASE }, 6.5);
+      tl.fromTo(all("starlabel"), { opacity: 0, x: -12 }, { opacity: 1, x: 0, duration: 0.45, ease: EASE }, 6.72);
+      tl.fromTo(all("push"), { scaleX: 0, transformOrigin: "left center" }, { scaleX: 1, duration: 0.6, ease: EASE }, 7.3);
+      tl.fromTo(all("pushhead"), { opacity: 0, x: -18 }, { opacity: 1, x: 0, duration: 0.5, ease: EASE }, 7.5);
+      tl.fromTo(rows.concat(all("topbar"), all("head"), all("rail")), { x: 0 }, { x: 34, duration: 1, ease: EASE }, 7.4);
+
+      window.__timelines["04-enchants"] = tl;
+    })();
+  </script>
+</template>

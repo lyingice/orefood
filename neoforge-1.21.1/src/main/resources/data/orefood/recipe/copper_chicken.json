@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "ore_food",
+  "key": {
+    "#": { "item": "minecraft:copper_ingot" },
+    "X": { "item": "minecraft:cooked_chicken" }
+  },
+  "pattern": [ "###", "#X#", "###" ],
+  "result": { "id": "orefood:copper_chicken" }
+}

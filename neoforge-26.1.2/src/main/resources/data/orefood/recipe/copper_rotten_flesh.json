@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "ore_food",
+  "key": {
+    "#": "minecraft:copper_ingot",
+    "X": "minecraft:rotten_flesh"
+  },
+  "pattern": [ "###", "#X#", "###" ],
+  "result": { "id": "orefood:copper_rotten_flesh" }
+}

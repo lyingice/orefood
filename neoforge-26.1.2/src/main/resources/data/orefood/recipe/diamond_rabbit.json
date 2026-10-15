@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "ore_food",
+  "key": {
+    "#": "minecraft:diamond",
+    "X": "orefood:golden_rabbit"
+  },
+  "pattern": [ "###", "#X#", "###" ],
+  "result": { "id": "orefood:diamond_rabbit" }
+}

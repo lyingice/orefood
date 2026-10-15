@@ -1,18 +1,16 @@
 package com.lyingice.orefood.init;
 
 import com.lyingice.orefood.OreFoodConstants;
+import com.lyingice.orefood.OreFoodTable;
 import com.lyingice.orefood.data.OreFoodDefinition;
+import com.lyingice.orefood.data.PotionEffectSpec;
 import com.lyingice.orefood.item.OreFoodItem;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.core.component.DataComponentPatch;
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
-import net.minecraft.world.item.component.CustomModelData;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -21,14 +19,18 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 /**
  * 物品注册（NeoForge 1.21.1）。
  *
- * <p><b>只注册一个物品</b> {@code orefood:ore_food}。铁/金/钻石/下界合金牛排
- * 全都不是独立物品，而是「同一个物品 + 不同的 {@code orefood:definition} 组件」，
- * 由数据包通过动态注册表声明（见 {@link com.lyingice.orefood.data.OreFoodDefinition}）。
+ * <p><b>2.0</b>：矿物食品从「五种牛排」扩成 <b>5 矿物 × 10 食物 = 50 个物品</b>。
+ * 它们不再手写，而是由 {@link OreFoodTable} 的两层循环生成——数值规则与清单都在那边，
+ * 这里只负责「按 id 注册物品、把定义塞进去、放进创造栏」。
+ *
+ * <p>物品 id 就是 {@code <矿物>_<食物>}（例如 {@code copper_beef}、{@code netherite_salmon}），
+ * 与贴图、模型、配方、语言键一一对应。
+ *
+ * <p>附魔能力走 {@code Item#getEnchantmentValue(ItemStack)} 覆写（1.21.1 还没有组件版）。
  *
  * <p>注册时给的食物属性是<b>刻意的零值</b>（nutrition 0、saturation 0、alwaysEdible）：
  * 它只负责让物品「可被食用」，真正的营养由 Mixin 在吃下去的那一刻按定义加算
- * （见 {@code com.lyingice.orefood.mixin.LivingEntityEatMixin}）。
- * 这样无论物品栈是从创造栏、{@code /give} 还是别处来，数值都一致。
+ * （见 {@code OreFoodConsume}）。
  */
 public final class OreFoodItems {
 
@@ -37,18 +39,34 @@ public final class OreFoodItems {
             DeferredRegister.createItems(OreFoodConstants.MOD_ID);
 
     /**
-     * 矿物食品。
+     * 全部矿物食品，顺序与 {@link OreFoodTable#all()} 一致（外层矿物、内层食物）——
+     * 创造栏与启动自检都按这个顺序。
+     */
+    public static final List<DeferredItem<OreFoodItem>> ALL;
+
+    static {
+        List<DeferredItem<OreFoodItem>> items = new ArrayList<>(OreFoodTable.all().size());
+        for (OreFoodTable.ItemKey key : OreFoodTable.all()) {
+            items.add(register(key));
+        }
+        ALL = List.copyOf(items);
+    }
+
+    /**
+     * 注册一个矿物食品。
      *
      * <ul>
-     *   <li>{@code stacksTo(1)}：带耐久的物品堆叠会让「整堆共享一份耐久」，
-     *       语义混乱，因此强制不可堆叠；</li>
-     *   <li>{@code durability(1)}：只为让耐久相关组件存在（见类注释）；</li>
+     *   <li>{@code stacksTo(1)}：带耐久的物品堆叠会让「整堆共享一份耐久」；</li>
+     *   <li>{@code durability(1)}：只为让耐久相关组件存在，真正的上限由
+     *       {@link OreFoodItem#getMaxDamage(ItemStack)} 按定义给出；</li>
      *   <li>食物属性全零 + {@code alwaysEdible}：见类注释。</li>
      * </ul>
+     *
+     * <p>注意定义是在 {@code supplier} 里构造的——那时物品与状态效果都已完成注册。
      */
-    public static final DeferredItem<OreFoodItem> ORE_FOOD = ITEMS.registerItem(
-            "ore_food",
-            properties -> new OreFoodItem(properties
+    private static DeferredItem<OreFoodItem> register(OreFoodTable.ItemKey key) {
+        return ITEMS.registerItem(key.id(), properties -> {
+            properties
                     .stacksTo(1)
                     .durability(1)
                     .rarity(Rarity.COMMON)
@@ -56,59 +74,33 @@ public final class OreFoodItems {
                             .nutrition(0)
                             .saturationModifier(0.0F)
                             .alwaysEdible()
-                            .build())));
+                            .build());
+            return new OreFoodItem(properties, definition(key));
+        });
+    }
 
-    /**
-     * 把数据包里定义的每一种牛排都塞进「食物与饮品」标签页。
-     *
-     * <p>此处能拿到动态注册表，是因为创造标签页重建时数据包已经加载完毕；
-     * {@code getParameters().holders()} 就是当时的 {@code HolderLookup.Provider}。
-     */
+    /** @return 该组合的完整定义（营养 / 饱和度 / 耐久 / 附魔能力 / 负面效果）。 */
+    private static OreFoodDefinition definition(OreFoodTable.ItemKey key) {
+        List<PotionEffectSpec> effects = new ArrayList<>();
+        for (OreFoodTable.Debuff debuff : OreFoodTable.debuffs(key.tier(), key.base())) {
+            effects.add(PotionEffectSpec.of(debuff));
+        }
+        return new OreFoodDefinition(
+                OreFoodTable.nutrition(key.tier(), key.base()),
+                OreFoodTable.saturation(key.tier(), key.base()),
+                key.tier().durability(),
+                key.tier().enchantmentValue(),
+                List.copyOf(effects));
+    }
+
+    /** 把 50 个矿物食品放进「食物与饮品」标签页。 */
     public static void addToCreativeTab(BuildCreativeModeTabContentsEvent event) {
         if (!CreativeModeTabs.FOOD_AND_DRINKS.equals(event.getTabKey())) {
             return;
         }
-
-        HolderLookup.RegistryLookup<OreFoodDefinition> lookup =
-                event.getParameters().holders().lookupOrThrow(OreFoodDefinition.REGISTRY_KEY);
-
-        lookup.listElements().forEach(holder ->
-                event.accept(stackFor(holder.key().location(), holder.value())));
-    }
-
-    /**
-     * 一块牛排该带哪些组件——「一块牛排长什么样」的<b>唯一</b>权威来源。
-     *
-     * <p><b>为什么单独提出来</b>：配方语法糖也要用它，而配方 JSON 在反序列化之前就要展开，
-     * 那种时机不该构造 {@code ItemStack}（26.1.2 上会直接抛
-     * {@code NullPointerException: Components not bound yet}，见那边的注释）。
-     * 这里返回组件补丁，由调用方决定是套到物品栈上还是编码成 JSON。
-     *
-     * @param id         定义 id，同时决定显示名（{@code item.<命名空间>.<路径>}）
-     * @param definition 牛排定义
-     */
-    public static DataComponentPatch componentsFor(ResourceLocation id, OreFoodDefinition definition) {
-        DataComponentPatch.Builder builder = DataComponentPatch.builder();
-        builder.set(OreFoodComponents.DEFINITION.get(), definition);
-        builder.set(DataComponents.ITEM_NAME, Component.translatable(nameKey(id)));
-        if (definition.modelData() > 0) {
-            // 1.21.1 没有 ITEM_MODEL 组件，外观只能靠 custom_model_data +
-            // 模型文件里的 overrides 列表来切（见 assets/orefood/models/item/ore_food.json）。
-            builder.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(definition.modelData()));
+        for (DeferredItem<OreFoodItem> item : ALL) {
+            event.accept(new ItemStack(item.get()));
         }
-        return builder.build();
-    }
-
-    /** 按定义造一个矿物牛排物品栈；组件取自 {@link #componentsFor}，与配方产物完全一致。 */
-    public static ItemStack stackFor(ResourceLocation id, OreFoodDefinition definition) {
-        ItemStack stack = new ItemStack(ORE_FOOD.get());
-        stack.applyComponents(componentsFor(id, definition));
-        return stack;
-    }
-
-    /** @return 该定义对应的语言文件键，例如 {@code item.orefood.iron_beef}。 */
-    public static String nameKey(ResourceLocation id) {
-        return "item." + id.getNamespace() + "." + id.getPath();
     }
 
     /** 把物品注册表挂到 mod 事件总线；必须在主类构造器里调用一次。 */

@@ -1,0 +1,261 @@
+<template>
+  <style>
+    @font-face { font-family: "Newsreader"; src: url("assets/fonts/Newsreader_NotoSerifSC.ttf") format("truetype"); font-weight: 400; font-display: block; }
+    @font-face { font-family: "Hanken Grotesk"; src: url("assets/fonts/Hanken_Grotesk_NotoSansSC.ttf") format("truetype"); font-weight: 400 700; font-display: block; }
+    @font-face { font-family: "DM Mono"; src: url("assets/fonts/DM_Mono_Consolas.ttf") format("truetype"); font-weight: 400; font-display: block; }
+
+    #root {
+      position: absolute; inset: 0; width: 1920px; height: 1080px;
+      container-type: size; overflow: hidden;
+      font-family: "Hanken Grotesk", sans-serif; color: #1F2BE0;
+    }
+    .f06-resistance-px { image-rendering: pixelated; }
+
+    /* ---- frame furniture: ground + grid, hairlines, chrome ---- */
+    .f06-resistance-ground {
+      position: absolute; inset: 0; background-color: #F0EBDE;
+      background-image:
+        linear-gradient(to right, rgba(31,43,224,0.13) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(31,43,224,0.13) 1px, transparent 1px);
+      background-size: 2cqw 2cqw;
+    }
+    .f06-resistance-roof  { position: absolute; left: 4cqw; right: 4cqw; top: 3.4cqw; border-top: 0.12cqw solid #1F2BE0; }
+    .f06-resistance-floor { position: absolute; left: 4cqw; right: 4cqw; bottom: 4.6cqw; border-top: 0.12cqw solid #1F2BE0; }
+
+    /* pixel-glitch column, far right edge */
+    .f06-resistance-glitch {
+      position: absolute; right: 4cqw; top: 6cqw; height: 30cqw; width: 2.4cqw;
+      background-image: repeating-linear-gradient(to bottom, #1F2BE0 0 0.34cqw, transparent 0.34cqw 1.5cqw);
+    }
+    .f06-resistance-kicker {
+      position: absolute; left: 4.8cqw; top: 4.9cqw;
+      font-size: 15px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+    }
+    .f06-resistance-page {
+      position: absolute; right: 4.8cqw; top: 4.9cqw;
+      font-family: "DM Mono", monospace; font-size: 13px; letter-spacing: 0.06em;
+    }
+    /* the comparison seam: one cobalt rule between the two effects */
+    .f06-resistance-divider {
+      position: absolute; left: 50cqw; top: 6.4cqw; height: 37cqw;
+      border-left: 0.12cqw solid #1F2BE0;
+    }
+
+    /* ---- LEFT COLUMN — resistance, nailed at II ---- */
+    .f06-resistance-herobox {
+      position: absolute; left: 6cqw; top: 6.6cqw; width: 15.5cqw; height: 15.5cqw;
+      border: 0.12cqw solid #1F2BE0; background-color: rgba(240,235,222,0.92);
+    }
+    .f06-resistance-herobox img {
+      position: absolute; left: 1.05cqw; top: 1.05cqw; width: 13.4cqw; height: 13.4cqw;
+      object-fit: contain; image-rendering: pixelated;
+    }
+    .f06-resistance-name {
+      position: absolute; left: 6cqw; top: 23.3cqw;
+      font-size: 1.5cqw; font-weight: 600; letter-spacing: 0.12em;
+    }
+    .f06-resistance-tagbox {
+      position: absolute; left: 6cqw; top: 26.4cqw; width: 15.5cqw; height: 5.6cqw;
+      border: 0.12cqw solid #1F2BE0; background-color: rgba(240,235,222,0.92);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 1cqw; box-sizing: border-box;
+    }
+    .f06-resistance-taglabel { font-size: 1.15cqw; font-weight: 600; letter-spacing: 0.16em; }
+    .f06-resistance-tagroman { font-family: "Newsreader", serif; font-size: 3.2cqw; line-height: 1; letter-spacing: -0.01em; }
+    .f06-resistance-nailrule { position: absolute; left: 6cqw; top: 32.3cqw; width: 15.5cqw; border-top: 0.12cqw solid #1F2BE0; }
+    .f06-resistance-nailhead { position: absolute; left: 5.35cqw; top: 31.85cqw; width: 1.25cqw; height: 0.9cqw; background-color: #1F2BE0; }
+    .f06-resistance-numrow { position: absolute; left: 5.8cqw; top: 33.4cqw; display: flex; align-items: baseline; gap: 1.1cqw; }
+    .f06-resistance-num { font-family: "Newsreader", serif; font-size: 10.4cqw; line-height: 0.9; letter-spacing: -0.015em; }
+    .f06-resistance-numlabel { font-size: 1.5cqw; font-weight: 600; letter-spacing: 0.16em; }
+    .f06-resistance-undersweep { position: absolute; left: 5.8cqw; top: 43.4cqw; width: 16cqw; border-top: 0.12cqw solid #1F2BE0; }
+
+    /* ---- RIGHT COLUMN — absorption, follows the level ---- */
+    .f06-resistance-fxbox {
+      position: absolute; left: 54.6cqw; top: 6.8cqw; width: 9cqw; height: 9cqw;
+      border: 0.12cqw solid #1F2BE0; background-color: rgba(240,235,222,0.92);
+    }
+    .f06-resistance-fxbox img {
+      position: absolute; left: 1.15cqw; top: 1.15cqw; width: 6.7cqw; height: 6.7cqw;
+      object-fit: contain; image-rendering: pixelated;
+    }
+    .f06-resistance-fxname { position: absolute; left: 65.6cqw; top: 8.2cqw; font-size: 1.5cqw; font-weight: 600; letter-spacing: 0.12em; }
+    .f06-resistance-fxtag  { position: absolute; left: 65.6cqw; top: 11.6cqw; font-size: 1.15cqw; font-weight: 600; letter-spacing: 0.16em; }
+    .f06-resistance-lvcap  { position: absolute; left: 54.8cqw; top: 13.9cqw; font-family: "DM Mono", monospace; font-size: 13px; letter-spacing: 0.08em; }
+    .f06-resistance-lvstack { position: absolute; left: 54.8cqw; top: 18.8cqw; width: 11cqw; height: 5cqw; }
+    .f06-resistance-lv { position: absolute; left: 0; top: 0; font-family: "Newsreader", serif; font-size: 5cqw; line-height: 0.9; letter-spacing: -0.01em; }
+    /* level cells — pixel-stack, filling one per tick */
+    .f06-resistance-cells { position: absolute; left: 63.4cqw; top: 20.6cqw; display: flex; gap: 0.8cqw; }
+    .f06-resistance-cell { position: relative; width: 2.2cqw; height: 2.2cqw; background-color: rgba(31,43,224,0.13); }
+    .f06-resistance-cellfill { position: absolute; inset: 0; background-color: #1F2BE0; }
+    /* absorption hearts — one more per tick */
+    .f06-resistance-hearts { position: absolute; left: 54.8cqw; top: 26.4cqw; display: flex; gap: 1cqw; }
+    .f06-resistance-heart { width: 3.75cqw; height: 3.75cqw; display: block; image-rendering: pixelated; }
+
+    /* corner punctuation */
+    .f06-resistance-qr {
+      position: absolute; right: 4.8cqw; top: 39.4cqw; width: 4.4cqw; height: 4.4cqw;
+      background-image:
+        linear-gradient(to right, #1F2BE0 50%, transparent 50%),
+        linear-gradient(to bottom, #1F2BE0 50%, transparent 50%);
+      background-size: 1.1cqw 1.1cqw; box-shadow: 0 0 0 0.12cqw #F0EBDE;
+    }
+  </style>
+
+  <div id="root" data-composition-id="06-resistance" data-width="1920" data-height="1080">
+    <div class="clip f06-resistance-ground" data-start="0" data-duration="8" data-track-index="0"></div>
+    <div class="clip f06-resistance-glitch" data-start="0" data-duration="8" data-track-index="1"></div>
+    <div class="clip f06-resistance-roof" data-start="0" data-duration="8" data-track-index="2"></div>
+    <div class="clip f06-resistance-floor" data-start="0" data-duration="8" data-track-index="3"></div>
+
+    <div class="clip f06-resistance-kicker" data-start="0" data-duration="8" data-track-index="4">OreFood &nbsp;·&nbsp; 效果对照</div>
+    <div class="clip f06-resistance-page" data-start="0" data-duration="8" data-track-index="5">06 / 09</div>
+
+    <div class="clip f06-resistance-divider" data-start="0" data-duration="8" data-track-index="6"></div>
+
+    <!-- LEFT — 抗性提升, the fixed side -->
+    <div class="clip f06-resistance-herobox" data-start="0" data-duration="8" data-track-index="7">
+      <img src="assets/px/resistance.png" alt="" />
+    </div>
+    <div class="clip f06-resistance-name" data-start="0" data-duration="8" data-track-index="8">抗性提升</div>
+    <div class="clip f06-resistance-tagbox" data-start="0" data-duration="8" data-track-index="9">
+      <span class="f06-resistance-taglabel">固定</span>
+      <span class="f06-resistance-tagroman">II</span>
+    </div>
+    <div class="clip f06-resistance-nailhead" data-start="0" data-duration="8" data-track-index="10"></div>
+    <div class="clip f06-resistance-nailrule" data-start="0" data-duration="8" data-track-index="11"></div>
+
+    <div class="clip f06-resistance-numrow" data-start="5" data-duration="3" data-track-index="12">
+      <span class="f06-resistance-num">40%</span>
+      <span class="f06-resistance-numlabel">减伤</span>
+    </div>
+    <div class="clip f06-resistance-undersweep" data-start="6.3" data-duration="1.7" data-track-index="13"></div>
+
+    <!-- RIGHT — 生命吸收, the side that moves with the level -->
+    <div class="clip f06-resistance-fxbox" data-start="0" data-duration="8" data-track-index="14">
+      <img src="assets/px/absorption.png" alt="" />
+    </div>
+    <div class="clip f06-resistance-fxname" data-start="0" data-duration="8" data-track-index="15">生命吸收</div>
+    <div class="clip f06-resistance-fxtag" data-start="0" data-duration="8" data-track-index="16">随等级</div>
+    <div class="clip f06-resistance-lvcap" data-start="0" data-duration="8" data-track-index="17">LEVEL</div>
+
+    <div class="clip f06-resistance-lvstack" data-layout-allow-overlap data-start="0" data-duration="8" data-track-index="18">
+      <span class="f06-resistance-lv f06-resistance-lv-1" data-layout-allow-overlap>I</span>
+      <span class="f06-resistance-lv f06-resistance-lv-2" data-layout-allow-overlap>II</span>
+      <span class="f06-resistance-lv f06-resistance-lv-3" data-layout-allow-overlap>III</span>
+      <span class="f06-resistance-lv f06-resistance-lv-4" data-layout-allow-overlap>IV</span>
+    </div>
+
+    <div class="clip f06-resistance-cells" data-start="0" data-duration="8" data-track-index="19">
+      <div class="f06-resistance-cell"><div class="f06-resistance-cellfill f06-resistance-fill-1"></div></div>
+      <div class="f06-resistance-cell"><div class="f06-resistance-cellfill f06-resistance-fill-2"></div></div>
+      <div class="f06-resistance-cell"><div class="f06-resistance-cellfill f06-resistance-fill-3"></div></div>
+      <div class="f06-resistance-cell"><div class="f06-resistance-cellfill f06-resistance-fill-4"></div></div>
+    </div>
+
+    <div class="clip f06-resistance-hearts" data-start="0" data-duration="8" data-track-index="20">
+      <img class="f06-resistance-heart f06-resistance-heart-1" src="assets/px/absorb_heart.png" alt="" />
+      <img class="f06-resistance-heart f06-resistance-heart-2" src="assets/px/absorb_heart.png" alt="" />
+      <img class="f06-resistance-heart f06-resistance-heart-3" src="assets/px/absorb_heart.png" alt="" />
+      <img class="f06-resistance-heart f06-resistance-heart-4" src="assets/px/absorb_heart.png" alt="" />
+    </div>
+
+    <div class="clip f06-resistance-qr" data-start="6.3" data-duration="1.7" data-track-index="21"></div>
+  </div>
+
+  <script src="assets/vendor/gsap.min.js"></script>
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+
+      /* Scene 1 (0.0-1.6s) - the resistance icon thrusts in from above; the effect is named,
+         then its level is nailed: box, numeral, then the pin rule + nail head. */
+      tl.fromTo(".f06-resistance-herobox",
+        { opacity: 0, y: -78, scale: 1.18, transformOrigin: "50% 50%" },
+        { opacity: 1, y: 0, scale: 1, duration: 0.64, ease: "power3.out" }, 0.1);
+      tl.fromTo(".f06-resistance-name", { opacity: 0, y: 18 },
+        { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0.5);
+      tl.fromTo(".f06-resistance-tagbox",
+        { opacity: 0, scaleX: 0.8, transformOrigin: "0% 50%" },
+        { opacity: 1, scaleX: 1, duration: 0.46, ease: "power3.out" }, 0.85);
+      tl.fromTo(".f06-resistance-taglabel", { opacity: 0 },
+        { opacity: 1, duration: 0.34, ease: "power3.out" }, 0.98);
+      tl.fromTo(".f06-resistance-tagroman",
+        { opacity: 0, scale: 1.22, transformOrigin: "50% 50%" },
+        { opacity: 1, scale: 1, duration: 0.4, ease: "power3.out" }, 1.08);
+      tl.fromTo(".f06-resistance-nailrule",
+        { scaleX: 0, transformOrigin: "0% 50%" },
+        { scaleX: 1, duration: 0.42, ease: "power3.out" }, 1.32);
+      tl.fromTo(".f06-resistance-nailhead", { opacity: 0, y: -26 },
+        { opacity: 1, y: 0, duration: 0.34, ease: "power3.out" }, 1.4);
+
+      /* Scene 2 (1.6-2.4s) - the seam drops and the second effect lands on the right:
+         two effects, side by side. */
+      tl.fromTo(".f06-resistance-divider",
+        { scaleY: 0, transformOrigin: "50% 0%" },
+        { scaleY: 1, duration: 0.56, ease: "power3.out" }, 1.6);
+      tl.fromTo(".f06-resistance-fxbox", { opacity: 0, x: 56 },
+        { opacity: 1, x: 0, duration: 0.55, ease: "power3.out" }, 1.9);
+      tl.fromTo(".f06-resistance-fxname", { opacity: 0, y: 14 },
+        { opacity: 1, y: 0, duration: 0.46, ease: "power3.out" }, 2.15);
+      tl.fromTo(".f06-resistance-lvcap", { opacity: 0 },
+        { opacity: 1, duration: 0.36, ease: "power3.out" }, 2.32);
+      tl.fromTo(".f06-resistance-fxtag", { opacity: 0, y: 12 },
+        { opacity: 1, y: 0, duration: 0.42, ease: "power3.out" }, 2.42);
+
+      /* Scene 3 (2.4-5.4s) - the right numeral keeps ticking (I -> II -> III -> IV) while the
+         left tag never moves again: one follows the level, one does not. */
+      var tick = [
+        { t: 2.5,  num: ".f06-resistance-lv-1", cell: ".f06-resistance-fill-1", heart: ".f06-resistance-heart-1" },
+        { t: 3.25, num: ".f06-resistance-lv-2", cell: ".f06-resistance-fill-2", heart: ".f06-resistance-heart-2" },
+        { t: 4.0,  num: ".f06-resistance-lv-3", cell: ".f06-resistance-fill-3", heart: ".f06-resistance-heart-3" },
+        { t: 5.4,  num: ".f06-resistance-lv-4", cell: ".f06-resistance-fill-4", heart: ".f06-resistance-heart-4" }
+      ];
+      var prevNum = null;
+      tick.forEach(function (b) {
+        if (prevNum) {
+          tl.fromTo(prevNum,
+            { opacity: 1, scale: 1, filter: "blur(0px)", transformOrigin: "50% 50%" },
+            { opacity: 0, scale: 1.26, filter: "blur(7px)", duration: 0.32, ease: "power3.out", immediateRender: false }, b.t);
+        }
+        tl.fromTo(b.num,
+          { opacity: 0, scale: 0.84, filter: "blur(12px)", transformOrigin: "50% 50%" },
+          { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.38, ease: "power3.out" }, b.t);
+        tl.fromTo(b.cell, { scaleY: 0, transformOrigin: "50% 100%" },
+          { scaleY: 1, duration: 0.34, ease: "power3.out" }, b.t + 0.06);
+        tl.fromTo(b.heart,
+          { opacity: 0, scale: 0.55, transformOrigin: "50% 50%" },
+          { opacity: 1, scale: 1, duration: 0.36, ease: "power3.out" }, b.t + 0.04);
+        prevNum = b.num;
+      });
+
+      /* Scene 4 (5.1-6.5s) - the payoff: 40% lands on the fixed side while the right side
+         is still ticking; the locked side then stops dead. */
+      tl.fromTo(".f06-resistance-num", { opacity: 0, y: 36 },
+        { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" }, 5.1);
+      tl.fromTo(".f06-resistance-numlabel", { opacity: 0, y: 14 },
+        { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 5.6);
+
+      /* Scene 5 (6.1-8.0s) - held read: the right column keeps settling, the left is frozen. */
+      tl.fromTo(".f06-resistance-lvstack", { y: 9 },
+        { y: 0, duration: 1.5, ease: "power3.out" }, 6.1);
+      tl.fromTo(".f06-resistance-undersweep",
+        { scaleX: 0, transformOrigin: "0% 50%" },
+        { scaleX: 1, duration: 0.5, ease: "power3.out" }, 6.4);
+      tl.fromTo(".f06-resistance-qr",
+        { opacity: 0, scale: 0.7, transformOrigin: "50% 50%" },
+        { opacity: 1, scale: 1, duration: 0.45, ease: "power3.out" }, 6.4);
+
+      /* furniture */
+      tl.fromTo(".f06-resistance-glitch", { opacity: 0 }, { opacity: 0.55, duration: 0.6, ease: "power3.out" }, 0.9);
+      tl.fromTo(".f06-resistance-glitch", { backgroundPositionY: "0px" },
+        { backgroundPositionY: "-1.5cqw", duration: 1.7, ease: "none" }, 6.2);
+      tl.fromTo(".f06-resistance-kicker", { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 0.14);
+      tl.fromTo(".f06-resistance-page", { opacity: 0 },
+        { opacity: 1, duration: 0.4, ease: "power3.out" }, 0.72);
+
+      window.__timelines["06-resistance"] = tl;
+    })();
+  </script>
+</template>

@@ -1,19 +1,20 @@
 package com.lyingice.orefood.item;
 
 import com.lyingice.orefood.data.OreFoodDefinition;
-import com.lyingice.orefood.init.OreFoodComponents;
-import com.lyingice.orefood.init.OreFoodItems;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 矿物食品——全模组唯一的物品，所有牛排都是它的带组件变体。
+ * 矿物牛排物品（NeoForge 1.21.1）。
  *
- * <p>「哪种牛排」由物品栈上的 {@code orefood:definition} 组件决定，
- * 因此<b>耐久上限与附魔能力都是按物品栈算的</b>，而不是按物品算的。
- * 原版的 {@code Item#getMaxDamage()} 是物品级的（所有实例共用一个值），
- * 这里改为覆写 NeoForge 的 {@code ItemStack} 敏感重载。
+ * <p>每一种牛排都是这个类的<b>独立实例</b>，构造时带上自己的 {@link OreFoodDefinition}
+ * （见 {@code OreFoodItems}）。全模组的食用结算、耐久消耗、附魔能力、提示框都通过
+ * {@link #definitionOf(ItemStack)} 取定义，因此<b>任何</b>继承本类的物品
+ * ——包括 KubeJS 脚本注册的——都会自动拥有完整的矿物牛排行为。
+ *
+ * <p><b>名字不再需要覆写</b>：1.1.x 里五种牛排共用一个物品，只能从定义 id 派生显示名；
+ * 现在每种牛排是独立物品，原版按物品描述 id（{@code item.orefood.<路径>}）取名即可，
+ * 铁砧改名等原版行为也自然正确。
  *
  * <p>注意注册时仍然写了 {@code Properties.durability(1)}：它的作用只是让
  * {@code MAX_DAMAGE} / {@code DAMAGE} 两个组件存在，从而让
@@ -21,35 +22,25 @@ import net.minecraft.world.item.ItemStack;
  */
 public class OreFoodItem extends Item {
 
-    public OreFoodItem(Item.Properties properties) {
+    private final OreFoodDefinition definition;
+
+    public OreFoodItem(Item.Properties properties, OreFoodDefinition definition) {
         super(properties);
+        this.definition = definition;
+    }
+
+    /** @return 这个物品自带的牛排定义（永远非 {@code null}）。 */
+    public OreFoodDefinition definition() {
+        return this.definition;
     }
 
     /**
-     * 取物品栈上的牛排定义。
+     * 取物品栈对应的牛排定义。
      *
-     * @return 定义；若该物品栈没有定义组件（例如用 {@code /give} 直接给的空壳），返回 {@code null}
+     * @return 定义；该物品不是矿物牛排时返回 {@code null}（原版食物与别的模组物品照旧）
      */
     public static OreFoodDefinition definitionOf(ItemStack stack) {
-        return stack.get(OreFoodComponents.DEFINITION.get());
-    }
-
-    /**
-     * 按定义给出显示名。
-     *
-     * <p>名字<b>从定义 id 派生</b>，而不是必须烘焙进物品栈的组件。这样无论物品栈是怎么来的
-     * ——创造栏、合成产物、{@code /give}、别的模组发的——只要带着定义就显示正确名字。
-     * 曾经创造栏设名字而配方产物只抄了定义组件，结果合成出来的牛排叫「矿物食品」。
-     *
-     * <p>原版的回退链是「自定义名（铁砧）→ 物品名组件 → 本方法」，所以铁砧改名仍然优先。
-     */
-    @Override
-    public Component getName(ItemStack stack) {
-        OreFoodDefinition definition = definitionOf(stack);
-        if (definition != null && definition.id().isPresent()) {
-            return Component.translatable(OreFoodItems.nameKey(definition.id().get()));
-        }
-        return super.getName(stack);
+        return stack.getItem() instanceof OreFoodItem food ? food.definition : null;
     }
 
     /**
@@ -61,17 +52,14 @@ public class OreFoodItem extends Item {
      */
     @Override
     public int getMaxDamage(ItemStack stack) {
-        OreFoodDefinition definition = definitionOf(stack);
-        if (definition != null && !definition.infiniteDurability()) {
-            return definition.durability();
-        }
-        return super.getMaxDamage(stack);
+        return this.definition.infiniteDurability()
+                ? super.getMaxDamage(stack)
+                : this.definition.durability();
     }
 
-    /** 按定义给出附魔能力（铁 1 / 金 5 / 钻石 10 / 下界合金 15）。 */
+    /** 按定义给出附魔能力（铜/铁 1、金 5、钻石 10、下界合金 15）。 */
     @Override
     public int getEnchantmentValue(ItemStack stack) {
-        OreFoodDefinition definition = definitionOf(stack);
-        return definition != null ? definition.enchantmentValue() : super.getEnchantmentValue(stack);
+        return this.definition.enchantmentValue();
     }
 }

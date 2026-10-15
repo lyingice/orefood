@@ -1,0 +1,199 @@
+<template>
+  <style>
+    @font-face { font-family: "Newsreader"; src: url("assets/fonts/Newsreader_NotoSerifSC.ttf") format("truetype"); font-weight: 400; font-display: block; }
+    @font-face { font-family: "Hanken Grotesk"; src: url("assets/fonts/Hanken_Grotesk_NotoSansSC.ttf") format("truetype"); font-weight: 400 700; font-display: block; }
+    @font-face { font-family: "DM Mono"; src: url("assets/fonts/DM_Mono_Consolas.ttf") format("truetype"); font-weight: 400; font-display: block; }
+
+    #root {
+      position: absolute; inset: 0; width: 1920px; height: 1080px;
+      container-type: size; overflow: hidden;
+      font-family: "Hanken Grotesk", sans-serif; color: #1F2BE0;
+    }
+
+    /* ---- permanent furniture: cream ground, graph paper, hairlines ---- */
+    .f5-ground {
+      position: absolute; inset: 0; background-color: #F0EBDE;
+      background-image:
+        linear-gradient(to right, rgba(31,43,224,0.13) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(31,43,224,0.13) 1px, transparent 1px);
+      background-size: 2cqw 2cqw;
+    }
+    .f5-roof { position: absolute; left: 4cqw; right: 4cqw; top: 3.4cqw; border-top: 0.12cqw solid #1F2BE0; }
+    .f5-floor { position: absolute; left: 4cqw; right: 4cqw; bottom: 4.6cqw; border-top: 0.12cqw solid #1F2BE0; }
+    .f5-kicker { position: absolute; left: 4.6cqw; top: 5.6cqw; font-size: 15px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; white-space: nowrap; }
+    .f5-page { position: absolute; right: 4.6cqw; bottom: 6cqw; font-family: "DM Mono", monospace; font-size: 13px; letter-spacing: 0.06em; }
+
+    /* every authored element is absolutely placed; nothing is centred with a CSS transform */
+    .f5-el { position: absolute; right: auto; bottom: auto; }
+
+    /* ---- hero: the steak, then the three-bite gauge ---- */
+    .f5-beef { left: 5.4cqw; top: 7.6cqw; width: 15cqw; }
+    .f5-px { image-rendering: pixelated; display: block; width: 100%; height: auto; }
+    .f5-beeflabel { left: 5.4cqw; top: 23.2cqw; font-size: 15px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap; }
+    .f5-gaugelabel { left: 5.4cqw; top: 25.9cqw; font-size: 13px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap; }
+
+    .f5-pip { width: 1.4cqw; height: 1.4cqw; box-sizing: border-box; border: 0.12cqw solid #1F2BE0; background: rgba(240,235,222,0.9); }
+    .f5-pipfill { position: absolute; inset: 0; background: #1F2BE0; }
+    .f5-pip-0 { left: 24.5cqw; top: 26cqw; }
+    .f5-pip-1 { left: 26.4cqw; top: 26cqw; }
+    .f5-pip-2 { left: 28.3cqw; top: 26cqw; }
+
+    /* ---- the three effect bays: one per bite ---- */
+    .f5-rule { width: 20.5cqw; height: 0; border-top: 0.12cqw solid #1F2BE0; }
+    .f5-rule-1 { left: 26.4cqw; top: 9cqw; }
+    .f5-rule-2 { left: 49.7cqw; top: 9cqw; }
+    .f5-rule-3 { left: 73cqw; top: 9cqw; }
+
+    .f5-ord { font-family: "DM Mono", monospace; font-size: 13px; letter-spacing: 0.06em; }
+    .f5-ord-1 { left: 26.75cqw; top: 9.6cqw; }
+    .f5-ord-2 { left: 50.05cqw; top: 9.6cqw; }
+    .f5-ord-3 { left: 73.35cqw; top: 9.6cqw; }
+
+    .f5-name { font-family: "Newsreader", serif; font-size: 2.1cqw; line-height: 1.05; letter-spacing: -0.005em; white-space: nowrap; }
+    .f5-name-1 { left: 26.4cqw; top: 12cqw; }
+    .f5-name-2 { left: 49.7cqw; top: 12cqw; }
+    .f5-name-3 { left: 73cqw; top: 12cqw; }
+
+    .f5-tile { width: 9cqw; height: 9cqw; box-sizing: border-box; border: 0.12cqw solid #1F2BE0; background: rgba(240,235,222,0.94); }
+    .f5-icon { position: absolute; left: 1.1667cqw; top: 1.1667cqw; width: 6.6667cqw; height: 6.6667cqw; image-rendering: pixelated; }
+    .f5-tile-1a { left: 26.85cqw; top: 17.2cqw; }
+    .f5-tile-1b { left: 37.45cqw; top: 17.2cqw; }
+    .f5-tile-2a { left: 50.15cqw; top: 17.2cqw; }
+    .f5-tile-2b { left: 60.75cqw; top: 17.2cqw; }
+    .f5-tile-3a { left: 73.45cqw; top: 17.2cqw; }
+    .f5-tile-3b { left: 84.05cqw; top: 17.2cqw; }
+
+    .f5-chip { height: 2.2cqw; box-sizing: border-box; border: 0.12cqw solid #1F2BE0; background: rgba(240,235,222,0.94);
+      font-family: "DM Mono", monospace; font-size: 13px; letter-spacing: 0.06em; line-height: 1.96cqw; text-align: center; white-space: nowrap; }
+    .f5-chipl { width: 2.4cqw; }
+    .f5-chips { width: 5cqw; }
+    .f5-chip-1al { left: 27.4cqw; top: 27.4cqw; }
+    .f5-chip-1ad { left: 30.3cqw; top: 27.4cqw; }
+    .f5-chip-1bl { left: 38cqw; top: 27.4cqw; }
+    .f5-chip-1bd { left: 40.9cqw; top: 27.4cqw; }
+    .f5-chip-2al { left: 50.7cqw; top: 27.4cqw; }
+    .f5-chip-2ad { left: 53.6cqw; top: 27.4cqw; }
+    .f5-chip-2bl { left: 61.3cqw; top: 27.4cqw; }
+    .f5-chip-2bd { left: 64.2cqw; top: 27.4cqw; }
+    .f5-chip-3al { left: 74cqw; top: 27.4cqw; }
+    .f5-chip-3ad { left: 76.9cqw; top: 27.4cqw; }
+    .f5-chip-3bl { left: 84.6cqw; top: 27.4cqw; }
+    .f5-chip-3bd { left: 87.5cqw; top: 27.4cqw; }
+
+    /* ---- payoff ---- */
+    .f5-forty { left: 4.9cqw; top: 29.6cqw; font-family: "Newsreader", serif; font-size: 10.4cqw; line-height: 0.9; letter-spacing: -0.008em; white-space: nowrap; }
+    .f5-fortylabel { left: 5.4cqw; top: 41.7cqw; font-size: 15px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap; }
+  </style>
+
+  <div id="root" data-composition-id="05-bite-triggers" data-width="1920" data-height="1080">
+    <div class="clip f5-ground" data-start="0" data-duration="12.7" data-track-index="0"></div>
+    <div class="clip f5-roof" data-start="0" data-duration="12.7" data-track-index="1"></div>
+    <div class="clip f5-floor" data-start="0" data-duration="12.7" data-track-index="2"></div>
+    <div class="clip f5-kicker" data-start="0" data-duration="12.7" data-track-index="3">OreFood &nbsp;·&nbsp; 一口一个效果</div>
+    <div class="clip f5-page" data-start="0" data-duration="12.7" data-track-index="4">05 / 09</div>
+    <div class="clip f5-el f5-beef" data-start="0" data-duration="12.7" data-track-index="5"><img class="f5-px" src="assets/px/diamond_beef.png" alt="" /></div>
+    <div class="clip f5-el f5-beeflabel" data-start="0.3" data-duration="12.4" data-track-index="6">钻石牛排</div>
+    <div class="clip f5-el f5-gaugelabel" data-start="0.5" data-duration="12.2" data-track-index="7">三次咬下</div>
+    <div class="clip f5-el f5-pip f5-pip-0" data-start="0.6" data-duration="12.1" data-track-index="8"><span class="f5-pipfill f5-pipfill-0"></span></div>
+    <div class="clip f5-el f5-pip f5-pip-1" data-start="0.7" data-duration="12" data-track-index="9"><span class="f5-pipfill f5-pipfill-1"></span></div>
+    <div class="clip f5-el f5-pip f5-pip-2" data-start="0.8" data-duration="11.9" data-track-index="10"><span class="f5-pipfill f5-pipfill-2"></span></div>
+    <div class="clip f5-el f5-rule f5-rule-1" data-start="0.9" data-duration="11.8" data-track-index="11"></div>
+    <div class="clip f5-el f5-ord f5-ord-1" data-start="1.05" data-duration="11.65" data-track-index="12">01</div>
+    <div class="clip f5-el f5-name f5-name-1" data-start="1.25" data-duration="11.45" data-track-index="13">强效恢复</div>
+    <div class="clip f5-el f5-tile f5-tile-1a" data-start="1.95" data-duration="10.75" data-track-index="14"><img class="f5-icon" src="assets/px/instant_health.png" alt="" /></div>
+    <div class="clip f5-el f5-chip f5-chipl f5-chip-1al" data-start="2.25" data-duration="10.45" data-track-index="15">I</div>
+    <div class="clip f5-el f5-chip f5-chips f5-chip-1ad" data-start="2.35" data-duration="10.35" data-track-index="16">0s</div>
+    <div class="clip f5-el f5-tile f5-tile-1b" data-start="3.05" data-duration="9.65" data-track-index="17"><img class="f5-icon" src="assets/px/regeneration.png" alt="" /></div>
+    <div class="clip f5-el f5-chip f5-chipl f5-chip-1bl" data-start="3.35" data-duration="9.35" data-track-index="18">I</div>
+    <div class="clip f5-el f5-chip f5-chips f5-chip-1bd" data-start="3.45" data-duration="9.25" data-track-index="19">45s</div>
+    <div class="clip f5-el f5-rule f5-rule-2" data-start="4.35" data-duration="8.35" data-track-index="20"></div>
+    <div class="clip f5-el f5-ord f5-ord-2" data-start="4.5" data-duration="8.2" data-track-index="21">02</div>
+    <div class="clip f5-el f5-name f5-name-2" data-start="4.7" data-duration="8" data-track-index="22">肾上腺素</div>
+    <div class="clip f5-el f5-tile f5-tile-2a" data-start="5.5" data-duration="7.2" data-track-index="23"><img class="f5-icon" src="assets/px/strength.png" alt="" /></div>
+    <div class="clip f5-el f5-chip f5-chipl f5-chip-2al" data-start="5.8" data-duration="6.9" data-track-index="24">I</div>
+    <div class="clip f5-el f5-chip f5-chips f5-chip-2ad" data-start="5.9" data-duration="6.8" data-track-index="25">90s</div>
+    <div class="clip f5-el f5-tile f5-tile-2b" data-start="6.4" data-duration="6.3" data-track-index="26"><img class="f5-icon" src="assets/px/speed.png" alt="" /></div>
+    <div class="clip f5-el f5-chip f5-chipl f5-chip-2bl" data-start="6.7" data-duration="6" data-track-index="27">I</div>
+    <div class="clip f5-el f5-chip f5-chips f5-chip-2bd" data-start="6.8" data-duration="5.9" data-track-index="28">90s</div>
+    <div class="clip f5-el f5-rule f5-rule-3" data-start="7.55" data-duration="5.15" data-track-index="29"></div>
+    <div class="clip f5-el f5-ord f5-ord-3" data-start="7.7" data-duration="5" data-track-index="30">03</div>
+    <div class="clip f5-el f5-name f5-name-3" data-start="7.9" data-duration="4.8" data-track-index="31">强身健体</div>
+    <div class="clip f5-el f5-tile f5-tile-3a" data-start="8.6" data-duration="4.1" data-track-index="32"><img class="f5-icon" src="assets/px/absorption.png" alt="" /></div>
+    <div class="clip f5-el f5-chip f5-chipl f5-chip-3al" data-start="8.9" data-duration="3.8" data-track-index="33">I</div>
+    <div class="clip f5-el f5-chip f5-chips f5-chip-3ad" data-start="9" data-duration="3.7" data-track-index="34">120s</div>
+    <div class="clip f5-el f5-tile f5-tile-3b" data-start="9.75" data-duration="2.95" data-track-index="35"><img class="f5-icon" src="assets/px/resistance.png" alt="" /></div>
+    <div class="clip f5-el f5-chip f5-chipl f5-chip-3bl" data-start="10.05" data-duration="2.65" data-track-index="36">II</div>
+    <div class="clip f5-el f5-chip f5-chips f5-chip-3bd" data-start="10.15" data-duration="2.55" data-track-index="37">30s</div>
+    <div class="clip f5-el f5-forty" data-start="11.15" data-duration="1.55" data-track-index="38">40%</div>
+    <div class="clip f5-el f5-fortylabel" data-start="11.6" data-duration="1.1" data-track-index="39">减伤</div>
+  </div>
+
+  <script src="assets/vendor/gsap.min.js"></script>
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+
+      /* macro move: the graph paper drifts exactly two cells across the whole shot */
+      tl.fromTo(".f5-ground", { backgroundPositionY: "0cqw" }, { backgroundPositionY: "-4cqw", duration: 12.7, ease: "none" }, 0);
+
+      /* Scene 1 (0.0-0.9s) - the steak lands; the three-bite gauge waits empty */
+      tl.fromTo(".f5-beef", { opacity: 0, scale: 0.62, transformOrigin: "50% 50%" }, { opacity: 1, scale: 1, duration: 0.5, ease: "power3.out" }, 0);
+      tl.fromTo(".f5-beeflabel", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, 0.3);
+      tl.fromTo(".f5-gaugelabel", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, 0.5);
+      ["0", "1", "2"].forEach(function (n, i) {
+        tl.fromTo(".f5-pip-" + n, { opacity: 0, scale: 0.72, transformOrigin: "50% 50%" },
+          { opacity: 1, scale: 1, duration: 0.34, ease: "power3.out" }, 0.6 + i * 0.1);
+      });
+
+      /* a bite: the pip fills, the steak compresses and springs out */
+      function bite(t, i) {
+        tl.fromTo(".f5-pipfill-" + i, { opacity: 0, scale: 0.35, transformOrigin: "50% 50%" },
+          { opacity: 1, scale: 1, duration: 0.3, ease: "power3.out" }, t);
+        tl.fromTo(".f5-beef", { scaleX: 1.05, scaleY: 0.93 }, { scaleX: 1.02, scaleY: 0.985, duration: 0.14, ease: "power3.out" }, t + 0.02);
+        tl.fromTo(".f5-beef", { scaleX: 1.02, scaleY: 0.985 }, { scaleX: 1, scaleY: 1, duration: 0.44, ease: "power3.out" }, t + 0.16);
+      }
+      function bay(n, t) {
+        tl.fromTo(".f5-rule-" + n, { scaleX: 0, transformOrigin: "left center" }, { scaleX: 1, duration: 0.45, ease: "power3.out" }, t);
+        tl.fromTo(".f5-ord-" + n, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.35, ease: "power3.out" }, t + 0.15);
+        tl.fromTo(".f5-name-" + n, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, t + 0.35);
+      }
+      function tile(sel, t) {
+        tl.fromTo(sel, { opacity: 0, scale: 0.7, y: 14, transformOrigin: "50% 50%" }, { opacity: 1, scale: 1, y: 0, duration: 0.45, ease: "power3.out" }, t);
+      }
+      function chip(sel, t) {
+        tl.fromTo(sel, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, t);
+      }
+
+      /* Scene 2 (0.9-4.1s) - bite 1: instant health + regeneration */
+      bite(0.9, 0);
+      bay(1, 0.9);
+      tile(".f5-tile-1a", 1.95); chip(".f5-chip-1al", 2.25); chip(".f5-chip-1ad", 2.35);
+      tile(".f5-tile-1b", 3.05); chip(".f5-chip-1bl", 3.35); chip(".f5-chip-1bd", 3.45);
+
+      /* Scene 3 (4.35-7.3s) - bite 2: strength + speed */
+      bite(4.35, 1);
+      bay(2, 4.35);
+      tile(".f5-tile-2a", 5.5); chip(".f5-chip-2al", 5.8); chip(".f5-chip-2ad", 5.9);
+      tile(".f5-tile-2b", 6.4); chip(".f5-chip-2bl", 6.7); chip(".f5-chip-2bd", 6.8);
+
+      /* Scene 4 (7.55-12.7s) - bite 3: absorption + resistance II, then the payoff */
+      bite(7.55, 2);
+      bay(3, 7.55);
+      tile(".f5-tile-3a", 8.6); chip(".f5-chip-3al", 8.9); chip(".f5-chip-3ad", 9.0);
+      tile(".f5-tile-3b", 9.75); chip(".f5-chip-3bl", 10.05); chip(".f5-chip-3bd", 10.15);
+
+      /* resistance II is called out: the chip inverts to solid ink */
+      tl.fromTo(".f5-chip-3bl", { backgroundColor: "rgba(240,235,222,0.94)", color: "#1F2BE0" },
+        { backgroundColor: "#1F2BE0", color: "#F0EBDE", duration: 0.32, ease: "power3.out" }, 10.45);
+      tl.fromTo(".f5-chip-3bl", { scale: 1.28, transformOrigin: "50% 50%" }, { scale: 1, duration: 0.4, ease: "power3.out" }, 10.45);
+
+      /* the resistance icon pushes to its maximum size and hands the frame over */
+      tl.fromTo(".f5-tile-3b", { scale: 1, transformOrigin: "50% 100%" }, { scale: 1.34, duration: 0.55, ease: "power3.out" }, 11.15);
+      tl.fromTo(".f5-forty", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 11.15);
+      tl.fromTo(".f5-fortylabel", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 11.6);
+
+      window.__timelines["05-bite-triggers"] = tl;
+    })();
+  </script>
+</template>

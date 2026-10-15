@@ -1,8 +1,11 @@
 package com.lyingice.orefood.data;
 
+import com.lyingice.orefood.OreFoodTable;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -41,6 +44,27 @@ public record PotionEffectSpec(Holder<MobEffect> effect, int duration, int ampli
             ByteBufCodecs.FLOAT, PotionEffectSpec::probability,
             PotionEffectSpec::new
     );
+
+    /**
+     * 把 {@link OreFoodTable} 里的负面效果描述转成本平台的记录。
+     *
+     * <p>效果 id 是我们自己表里写死的常量，解析不出来就是代码 bug——直接抛，
+     * 不要静默跳过（那个物品会少一条效果而没人发现）。
+     *
+     * @param debuff 纯数据的负面效果描述
+     * @return 可直接塞进 {@code OreFoodDefinition} 的记录
+     */
+    public static PotionEffectSpec of(OreFoodTable.Debuff debuff) {
+        Identifier id = Identifier.tryParse(debuff.effectId());
+        Holder.Reference<MobEffect> holder = id == null
+                ? null
+                : BuiltInRegistries.MOB_EFFECT.get(id).orElse(null);
+        if (holder == null) {
+            throw new IllegalStateException("[orefood] OreFoodTable 里写了未知的状态效果 id："
+                    + debuff.effectId());
+        }
+        return new PotionEffectSpec(holder, debuff.duration(), debuff.amplifier(), debuff.probability());
+    }
 
     /** @return 可直接施加到生物身上的效果实例。 */
     public MobEffectInstance toInstance() {

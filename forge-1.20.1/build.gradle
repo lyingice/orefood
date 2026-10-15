@@ -2,6 +2,7 @@ plugins {
     id 'idea'
     id 'maven-publish'
     id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+    id 'org.spongepowered.mixin' version '0.7.+'
 }
 
 version = mod_version
@@ -26,6 +27,23 @@ sourceSets.main.java.srcDir '../common/src/main/java'
 // 共享资源层：语言文件等平台无关资源由三个模块打包同一份，
 // 避免同一条文案要在三个地方各改一遍。
 sourceSets.main.resources.srcDir '../common/src/main/resources'
+
+// ---------------------------------------------------------------------------
+// Mixin 的 refmap：**生产环境（SRG 名）下的命根子**。
+//
+// 注解里写的是 Mojang 名（eat / apply / assemble），而 1.20.1 的正式客户端里这些
+// 方法叫 SRG 名（m_21063_ ...）。把 Mojang 名翻译过去靠的就是 refmap：由 Mixin
+// 注解处理器在编译期生成，必须打进 jar，并在 orefood.mixins.json 里声明。
+//
+// **dev 运行永远看不出来**：runClient / runServer 用的是 Mojang 名，注解直接匹配成功。
+// 缺 refmap 的症状是「编译过、dev 正常、一打进 jar 就 InvalidInjectionException:
+// ... could not find any targets matching 'eat(...)'」，而且因为 config 是 required，
+// 游戏直接起不来。见 AGENT.md 踩坑清单第 18 条。
+// ---------------------------------------------------------------------------
+mixin {
+    add sourceSets.main, "${mod_id}.refmap.json"
+    config "${mod_id}.mixins.json"
+}
 
 minecraft {
     mappings channel: mapping_channel, version: mapping_version
@@ -81,9 +99,52 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 // ---------------------------------------------------------------------------
 sourceSets.test.java.srcDir '../common/src/test/java'
 
+repositories {
+    // MixinGradle 会往 annotationProcessor 里加 org.spongepowered:mixin:...:processor，
+    // 那个坐标只在 Sponge 仓库里。
+    maven {
+        name = 'Sponge'
+        url = 'https://repo.spongepowered.org/repository/maven-public/'
+    }
+    // KubeJS 的官方 maven。
+    maven {
+        name = 'Latvian'
+        url = 'https://maven.latvian.dev/releases'
+    }
+    // KubeJS 的传递依赖（architectury / rhino 等）：fg.deobf 解析 POM 时会去找它们。
+    maven {
+        name = 'Architectury'
+        url = 'https://maven.architectury.dev/'
+    }
+    maven {
+        name = 'Shedaniel'
+        url = 'https://maven.shedaniel.me/'
+    }
+    // KubeJS 的运行期依赖 animated-gif-lib 来自 JitPack（只有 dev 里启用 localRuntime 时才需要）。
+    maven {
+        name = 'JitPack'
+        url = 'https://jitpack.io'
+    }
+    mavenCentral()
+}
+
 dependencies {
     // 指定使用的 Minecraft + Forge 版本。ForgeGradle 会自行拉取 userdev 并完成配置。
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+
+    // Mixin 注解处理器：编译期把注解里的 Mojang 名写成 refmap（由上面的 mixin 块
+    // 指定输出文件名并打进 jar）。ForgeGradle 6 不会自动加，漏了它 refmap 就永远不生成，
+    // 而 dev 运行又完全看不出来——症状见上面 mixin 块的注释。
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+
+    // KubeJS 只用于**编译**那个物品类型插件（OreFoodKubeJSPlugin / OreFoodItemBuilder）：
+    // 没装 KubeJS 时 kubejs.plugins.txt 不会被读取，那两个类也就不会被加载。
+    // 1.20.1 是 SRG 环境所以 KubeJS 本体需要 fg.deobf。
+    compileOnly fg.deobf("dev.latvian.mods:kubejs-forge:${kubejs_version}")
+    // 还要单独补 rhino：KubeJS 的 RegistryInfo 实现了 rhino 的 TypeWrapperFactory，
+    // 而 rhino 不在 KubeJS 的传递依赖里，少了它 javac 会报「无法访问 TypeWrapperFactory」。
+    // 这里只需要类型在场，不调用它的成员，所以不必 deobf。
+    compileOnly "dev.latvian.mods:rhino-forge:${rhino_version}"
 
     // 测试只依赖 JUnit —— 共享层是纯 JDK，可以脱离 Minecraft 运行。
     testImplementation platform('org.junit:junit-bom:5.13.1')

@@ -1,0 +1,245 @@
+<template>
+  <style>
+    @font-face { font-family: "Newsreader"; src: url("assets/fonts/Newsreader_NotoSerifSC.ttf") format("truetype"); font-weight: 400; font-display: block; }
+    @font-face { font-family: "Hanken Grotesk"; src: url("assets/fonts/Hanken_Grotesk_NotoSansSC.ttf") format("truetype"); font-weight: 400 700; font-display: block; }
+    @font-face { font-family: "DM Mono"; src: url("assets/fonts/DM_Mono_Consolas.ttf") format("truetype"); font-weight: 400; font-display: block; }
+
+    #root {
+      position: absolute; inset: 0; width: 1920px; height: 1080px;
+      container-type: size; overflow: hidden;
+      font-family: "Hanken Grotesk", sans-serif; color: #1F2BE0;
+    }
+
+    /* ---- frame furniture: ground grid, top + bottom hairlines, chrome ---- */
+    .f2-ground {
+      position: absolute; inset: 0; background-color: #F0EBDE;
+      background-image:
+        linear-gradient(to right, rgba(31,43,224,0.13) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(31,43,224,0.13) 1px, transparent 1px);
+      background-size: 2cqw 2cqw;
+    }
+    .f2-roof { position: absolute; left: 4cqw; right: 4cqw; top: 3.4cqw; height: 0; border-top: 0.12cqw solid #1F2BE0; }
+    .f2-floor { position: absolute; left: 4cqw; right: 4cqw; bottom: 4.6cqw; height: 0; border-top: 0.12cqw solid #1F2BE0; }
+
+    .f2-kicker {
+      position: absolute; left: 4.6cqw; top: 5.6cqw;
+      font-size: 15px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+    }
+    .f2-page {
+      position: absolute; right: 4.6cqw; top: 5.6cqw;
+      font-family: "DM Mono", monospace; font-size: 13px; letter-spacing: 0.06em; text-align: right;
+    }
+
+    /* ---- the rack: six identical item frames (slot sprite, ink mask) ---- */
+    .f2-cell { position: absolute; top: 9cqw; width: 12.2cqw; height: 12.2cqw; }
+    .f2-slotpx { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+    .f2-slotpx-b { transform: rotate(180deg); }
+    .f2-c0 { left: 4.9cqw; }
+    .f2-c1 { left: 20.5cqw; }
+    .f2-c2 { left: 36.1cqw; }
+    .f2-c3 { left: 51.7cqw; }
+    .f2-c4 { left: 67.3cqw; }
+    .f2-c5 { left: 82.9cqw; }
+
+    /* ---- the five forms (plus the vanilla reference) ---- */
+    .f2-steak { position: absolute; top: 9.9cqw; width: 9cqw; height: 9cqw; }
+    .f2-px { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+    .f2-s0 { left: 6.5cqw; }
+    .f2-s1 { left: 22.1cqw; }
+    .f2-s2 { left: 37.7cqw; }
+    .f2-s3 { left: 53.3cqw; }
+    .f2-s4 { left: 68.9cqw; }
+    .f2-s5 { left: 84.5cqw; }
+
+    .f2-tag {
+      position: absolute; top: 27.9cqw; width: 12.2cqw; height: 2.8cqw;
+      line-height: 2.8cqw; text-align: center; white-space: nowrap;
+    }
+    .f2-chip { display: inline-block; vertical-align: middle; width: 2.4cqw; height: 2.4cqw; margin-right: 0.7cqw; image-rendering: pixelated; }
+    .f2-tagname { display: inline-block; vertical-align: middle; font-size: 1.3cqw; font-weight: 600; letter-spacing: 0.16em; }
+    .f2-t0 { left: 4.9cqw; }
+    .f2-t1 { left: 20.5cqw; }
+    .f2-t2 { left: 36.1cqw; }
+    .f2-t3 { left: 51.7cqw; }
+    .f2-t4 { left: 67.3cqw; }
+    .f2-t5 { left: 82.9cqw; }
+
+    /* ---- wiring: the five link up, then gather onto one line ---- */
+    .f2-link { position: absolute; top: 15.04cqw; height: 0.12cqw; background: #1F2BE0; }
+    .f2-l0 { left: 33.0cqw; width: 2.8cqw; }
+    .f2-l1 { left: 48.6cqw; width: 2.8cqw; }
+    .f2-l2 { left: 64.2cqw; width: 2.8cqw; }
+    .f2-l3 { left: 79.8cqw; width: 2.8cqw; }
+
+    .f2-drop { position: absolute; top: 21.2cqw; height: 5.6cqw; width: 0.12cqw; background: #1F2BE0; }
+    .f2-d0 { left: 26.54cqw; }
+    .f2-d1 { left: 42.14cqw; }
+    .f2-d2 { left: 57.74cqw; }
+    .f2-d3 { left: 73.34cqw; }
+    .f2-d4 { left: 88.94cqw; }
+
+    .f2-bus { position: absolute; left: 26.6cqw; top: 26.74cqw; width: 68.5cqw; height: 0.12cqw; background: #1F2BE0; }
+    .f2-elbow { position: absolute; left: 95.04cqw; top: 26.74cqw; width: 0.12cqw; height: 2.56cqw; background: #1F2BE0; }
+    .f2-arrow {
+      position: absolute; left: 94.74cqw; top: 29.3cqw; width: 0; height: 0;
+      border-left: 0.36cqw solid transparent; border-right: 0.36cqw solid transparent;
+      border-top: 0.5cqw solid #1F2BE0;
+    }
+
+    /* ---- the conclusion ---- */
+    .f2-conclusion {
+      position: absolute; left: 4.9cqw; right: 4.9cqw; top: 31.6cqw; height: 6.8cqw;
+      font-family: "Newsreader", serif; font-size: 6.8cqw; line-height: 1; letter-spacing: -0.005em;
+      text-align: right; white-space: nowrap;
+    }
+  </style>
+
+  <div id="root" data-composition-id="02-five-forms" data-width="1920" data-height="1080">
+    <div id="02-five-forms-ground" class="clip f2-ground" data-start="0" data-duration="9.4" data-track-index="0"></div>
+    <div id="02-five-forms-roof" class="clip f2-roof" data-start="0" data-duration="9.4" data-track-index="1"></div>
+    <div id="02-five-forms-floor" class="clip f2-floor" data-start="0" data-duration="9.4" data-track-index="2"></div>
+    <div id="02-five-forms-kicker" class="clip f2-kicker" data-start="0" data-duration="9.4" data-track-index="3">OreFood &nbsp;·&nbsp; 矿物牛排</div>
+    <div id="02-five-forms-page" class="clip f2-page" data-start="0" data-duration="9.4" data-track-index="4">02 / 09</div>
+
+    <div id="02-five-forms-cell-0" class="clip f2-cell f2-c0" data-start="0" data-duration="9.4" data-track-index="5">
+      <img class="f2-slotpx" src="assets/px/slot.png" alt="" />
+      <img class="f2-slotpx f2-slotpx-b" src="assets/px/slot.png" alt="" />
+    </div>
+    <div id="02-five-forms-cell-1" class="clip f2-cell f2-c1" data-start="0" data-duration="9.4" data-track-index="6">
+      <img class="f2-slotpx" src="assets/px/slot.png" alt="" />
+      <img class="f2-slotpx f2-slotpx-b" src="assets/px/slot.png" alt="" />
+    </div>
+    <div id="02-five-forms-cell-2" class="clip f2-cell f2-c2" data-start="0" data-duration="9.4" data-track-index="7">
+      <img class="f2-slotpx" src="assets/px/slot.png" alt="" />
+      <img class="f2-slotpx f2-slotpx-b" src="assets/px/slot.png" alt="" />
+    </div>
+    <div id="02-five-forms-cell-3" class="clip f2-cell f2-c3" data-start="0" data-duration="9.4" data-track-index="8">
+      <img class="f2-slotpx" src="assets/px/slot.png" alt="" />
+      <img class="f2-slotpx f2-slotpx-b" src="assets/px/slot.png" alt="" />
+    </div>
+    <div id="02-five-forms-cell-4" class="clip f2-cell f2-c4" data-start="0" data-duration="9.4" data-track-index="9">
+      <img class="f2-slotpx" src="assets/px/slot.png" alt="" />
+      <img class="f2-slotpx f2-slotpx-b" src="assets/px/slot.png" alt="" />
+    </div>
+    <div id="02-five-forms-cell-5" class="clip f2-cell f2-c5" data-start="0" data-duration="9.4" data-track-index="10">
+      <img class="f2-slotpx" src="assets/px/slot.png" alt="" />
+      <img class="f2-slotpx f2-slotpx-b" src="assets/px/slot.png" alt="" />
+    </div>
+
+    <div id="02-five-forms-steak-0" class="clip f2-steak f2-s0" data-start="0.35" data-duration="9.05" data-track-index="11">
+      <img class="f2-px" src="assets/px/cooked_beef.png" alt="" />
+    </div>
+    <div id="02-five-forms-tag-0" class="clip f2-tag f2-t0" data-start="0.72" data-duration="8.68" data-track-index="12">
+      <span class="f2-tagname">原版</span>
+    </div>
+
+    <div id="02-five-forms-steak-1" class="clip f2-steak f2-s1" data-start="0.95" data-duration="8.45" data-track-index="13">
+      <img class="f2-px" src="assets/px/copper_beef.png" alt="" />
+    </div>
+    <div id="02-five-forms-tag-1" class="clip f2-tag f2-t1" data-start="1.3" data-duration="8.1" data-track-index="14">
+      <img class="f2-chip" src="assets/px/copper_ingot.png" alt="" /><span class="f2-tagname">铜</span>
+    </div>
+
+    <div id="02-five-forms-steak-2" class="clip f2-steak f2-s2" data-start="1.55" data-duration="7.85" data-track-index="15">
+      <img class="f2-px" src="assets/px/iron_beef.png" alt="" />
+    </div>
+    <div id="02-five-forms-tag-2" class="clip f2-tag f2-t2" data-start="1.9" data-duration="7.5" data-track-index="16">
+      <img class="f2-chip" src="assets/px/iron_ingot.png" alt="" /><span class="f2-tagname">铁</span>
+    </div>
+
+    <div id="02-five-forms-steak-3" class="clip f2-steak f2-s3" data-start="2.15" data-duration="7.25" data-track-index="17">
+      <img class="f2-px" src="assets/px/golden_beef.png" alt="" />
+    </div>
+    <div id="02-five-forms-tag-3" class="clip f2-tag f2-t3" data-start="2.5" data-duration="6.9" data-track-index="18">
+      <img class="f2-chip" src="assets/px/gold_ingot.png" alt="" /><span class="f2-tagname">金</span>
+    </div>
+
+    <div id="02-five-forms-steak-4" class="clip f2-steak f2-s4" data-start="2.75" data-duration="6.65" data-track-index="19">
+      <img class="f2-px" src="assets/px/diamond_beef.png" alt="" />
+    </div>
+    <div id="02-five-forms-tag-4" class="clip f2-tag f2-t4" data-start="3.1" data-duration="6.3" data-track-index="20">
+      <img class="f2-chip" src="assets/px/diamond.png" alt="" /><span class="f2-tagname">钻石</span>
+    </div>
+
+    <div id="02-five-forms-steak-5" class="clip f2-steak f2-s5" data-start="3.35" data-duration="6.05" data-track-index="21">
+      <img class="f2-px" src="assets/px/netherite_beef.png" alt="" />
+    </div>
+    <div id="02-five-forms-tag-5" class="clip f2-tag f2-t5" data-start="3.7" data-duration="5.7" data-track-index="22">
+      <img class="f2-chip" src="assets/px/netherite_ingot.png" alt="" /><span class="f2-tagname">下界合金</span>
+    </div>
+
+    <div id="02-five-forms-link-0" class="clip f2-link f2-l0" data-start="4.7" data-duration="4.7" data-track-index="23"></div>
+    <div id="02-five-forms-link-1" class="clip f2-link f2-l1" data-start="4.79" data-duration="4.61" data-track-index="24"></div>
+    <div id="02-five-forms-link-2" class="clip f2-link f2-l2" data-start="4.88" data-duration="4.52" data-track-index="25"></div>
+    <div id="02-five-forms-link-3" class="clip f2-link f2-l3" data-start="4.97" data-duration="4.43" data-track-index="26"></div>
+
+    <div id="02-five-forms-drop-0" class="clip f2-drop f2-d0" data-start="5.7" data-duration="3.7" data-track-index="27"></div>
+    <div id="02-five-forms-drop-1" class="clip f2-drop f2-d1" data-start="5.77" data-duration="3.63" data-track-index="28"></div>
+    <div id="02-five-forms-drop-2" class="clip f2-drop f2-d2" data-start="5.84" data-duration="3.56" data-track-index="29"></div>
+    <div id="02-five-forms-drop-3" class="clip f2-drop f2-d3" data-start="5.91" data-duration="3.49" data-track-index="30"></div>
+    <div id="02-five-forms-drop-4" class="clip f2-drop f2-d4" data-start="5.98" data-duration="3.42" data-track-index="31"></div>
+
+    <div id="02-five-forms-bus" class="clip f2-bus" data-start="6.35" data-duration="3.05" data-track-index="32"></div>
+    <div id="02-five-forms-elbow" class="clip f2-elbow" data-start="6.95" data-duration="2.45" data-track-index="33"></div>
+    <div id="02-five-forms-arrow" class="clip f2-arrow" data-start="7.1" data-duration="2.3" data-track-index="34"></div>
+    <div id="02-five-forms-conclusion" class="clip f2-conclusion" data-start="7.05" data-duration="2.35" data-track-index="35">一个物品编号</div>
+  </div>
+
+  <script src="assets/vendor/gsap.min.js"></script>
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+
+      /* Scene 1 (0.0-0.9s) - the rack arrives; the vanilla reference lands first */
+      tl.fromTo(".f2-roof", { scaleX: 0, transformOrigin: "left center" }, { scaleX: 1, duration: 0.45, ease: "power3.out" }, 0.1);
+      tl.fromTo(".f2-floor", { scaleX: 0, transformOrigin: "right center" }, { scaleX: 1, duration: 0.45, ease: "power3.out" }, 0.1);
+      tl.fromTo(".f2-kicker", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" }, 0.15);
+      tl.fromTo(".f2-page", { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 0.25);
+
+      var i;
+      for (i = 0; i < 6; i++) {
+        tl.fromTo(".f2-c" + i, { opacity: 0, scale: 0.88, transformOrigin: "50% 50%" },
+          { opacity: 1, scale: 1, duration: 0.42, ease: "power3.out" }, 0.05 + i * 0.09);
+      }
+      tl.fromTo(".f2-s0", { opacity: 0, y: -26, scale: 0.7, transformOrigin: "50% 50%" },
+        { opacity: 1, y: 0, scale: 1, duration: 0.55, ease: "power3.out" }, 0.35);
+      tl.fromTo(".f2-t0", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 0.72);
+
+      /* Scene 2 (0.9-4.1s) - the five forms drop into their identical frames, one per mineral */
+      var land = [0.95, 1.55, 2.15, 2.75, 3.35];
+      var tagAt = [1.3, 1.9, 2.5, 3.1, 3.7];
+      for (i = 0; i < 5; i++) {
+        tl.fromTo(".f2-s" + (i + 1), { opacity: 0, y: -34, scale: 0.7, transformOrigin: "50% 50%" },
+          { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: "power3.out" }, land[i]);
+        tl.fromTo(".f2-t" + (i + 1), { opacity: 0, y: 12 },
+          { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, tagAt[i]);
+      }
+
+      /* Scene 3 (4.7-7.4s) - the five link across the gaps, then gather onto one line */
+      for (i = 0; i < 4; i++) {
+        tl.fromTo(".f2-l" + i, { scaleX: 0, transformOrigin: "left center" },
+          { scaleX: 1, duration: 0.42, ease: "power3.out" }, 4.7 + i * 0.09);
+      }
+      for (i = 0; i < 5; i++) {
+        tl.fromTo(".f2-d" + i, { scaleY: 0, transformOrigin: "center top" },
+          { scaleY: 1, duration: 0.38, ease: "power3.out" }, 5.7 + i * 0.07);
+      }
+      tl.fromTo(".f2-bus", { scaleX: 0, transformOrigin: "left center" }, { scaleX: 1, duration: 0.7, ease: "power3.out" }, 6.35);
+      tl.fromTo(".f2-elbow", { scaleY: 0, transformOrigin: "center top" }, { scaleY: 1, duration: 0.32, ease: "power3.out" }, 6.95);
+      tl.fromTo(".f2-arrow", { opacity: 0, scale: 0.4, transformOrigin: "50% 50%" },
+        { opacity: 1, scale: 1, duration: 0.34, ease: "power3.out" }, 7.1);
+
+      /* Scene 4 (7.05-9.4s) - the conclusion lands, then a held read on the five */
+      tl.fromTo(".f2-conclusion", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 7.05);
+
+      for (i = 0; i < 5; i++) {
+        var at = 7.9 + i * 0.11;
+        tl.to(".f2-s" + (i + 1), { scale: 1.05, y: -6, duration: 0.32, ease: "power3.out" }, at);
+        tl.to(".f2-s" + (i + 1), { scale: 1, y: 0, duration: 0.45, ease: "power3.out" }, at + 0.32);
+      }
+
+      window.__timelines["02-five-forms"] = tl;
+    })();
+  </script>
+</template>

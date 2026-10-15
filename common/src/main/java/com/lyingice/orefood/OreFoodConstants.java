@@ -22,7 +22,7 @@ public final class OreFoodConstants {
     public static final String MOD_NAME = "Ore Food";
 
     /** 模组版本，与各构建 {@code gradle.properties} 中的 {@code mod_version} 保持一致。 */
-    public static final String MOD_VERSION = "1.0.0";
+    public static final String MOD_VERSION = "2.0.0";
 
     /** 模组主包名。 */
     public static final String PACKAGE_ROOT = "com.lyingice.orefood";

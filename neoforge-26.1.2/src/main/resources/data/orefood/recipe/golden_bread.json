@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "ore_food",
+  "key": {
+    "#": "minecraft:gold_ingot",
+    "X": "orefood:iron_bread"
+  },
+  "pattern": [ "###", "#X#", "###" ],
+  "result": { "id": "orefood:golden_bread" }
+}

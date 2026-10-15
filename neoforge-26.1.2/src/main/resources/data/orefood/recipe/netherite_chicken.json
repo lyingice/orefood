@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "minecraft:netherite_ingot",
+  "base": "orefood:diamond_chicken",
+  "result": { "id": "orefood:netherite_chicken" },
+  "template": "minecraft:netherite_upgrade_smithing_template"
+}

@@ -1,0 +1,165 @@
+<template>
+  <style>
+    @font-face { font-family: "Newsreader"; src: url("assets/fonts/Newsreader_NotoSerifSC.ttf") format("truetype"); font-weight: 400; font-display: block; }
+    @font-face { font-family: "Hanken Grotesk"; src: url("assets/fonts/Hanken_Grotesk_NotoSansSC.ttf") format("truetype"); font-weight: 400 700; font-display: block; }
+    @font-face { font-family: "DM Mono"; src: url("assets/fonts/DM_Mono_Consolas.ttf") format("truetype"); font-weight: 400; font-display: block; }
+
+    #root {
+      position: absolute; inset: 0; width: 1920px; height: 1080px;
+      container-type: size; overflow: hidden;
+      font-family: "Hanken Grotesk", sans-serif; color: #1F2BE0;
+    }
+
+    .f8-ground {
+      position: absolute; inset: 0; background-color: #F0EBDE;
+      background-image:
+        linear-gradient(to right, rgba(31,43,224,0.13) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(31,43,224,0.13) 1px, transparent 1px);
+      background-size: 2cqw 2cqw;
+    }
+    .f8-roof { position: absolute; left: 4cqw; right: 4cqw; top: 3.4cqw; border-top: 0.12cqw solid #1F2BE0; }
+    .f8-floor { position: absolute; left: 4cqw; right: 4cqw; bottom: 4.6cqw; border-top: 0.12cqw solid #1F2BE0; }
+
+    .f8-kicker { position: absolute; left: 4.6cqw; top: 3.6cqw; font-size: 15px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; }
+    .f8-page {
+      position: absolute; right: 4.6cqw; top: 5.6cqw;
+      font-family: "DM Mono", monospace; font-size: 13px; letter-spacing: 0.06em;
+    }
+
+    /* the forge: the real smithing-table GUI mask, cropped to its own panel bounds */
+    .f8-panel { display: none; }
+    .f8-panelimg { display: none; }
+
+    .f8-paneltitle {
+      position: absolute; left: 6.5cqw; top: 6.6cqw;
+      font-size: 16px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+    }
+
+    /* the three input cells the mask's own grid draws */
+    .f8-cell { position: absolute; top: 26.5cqw; height: 10.6cqw; box-sizing: border-box; border: 0.12cqw solid #1F2BE0; }
+    .f8-cellA { left: 6.5cqw; width: 15.4cqw; }
+    .f8-cellB { left: 24.1cqw; width: 15.4cqw; }
+    .f8-cellC { left: 41.7cqw; width: 15.4cqw; }
+
+    .f8-item { position: absolute; }
+    .f8-item img { display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+    .f8-itemA { left: 11.0cqw; top: 28.3cqw; width: 6.9cqw; height: 6.9cqw; }
+    .f8-itemB { left: 28.6cqw; top: 28.3cqw; width: 6.9cqw; height: 6.9cqw; }
+    .f8-itemC { left: 46.2cqw; top: 27.6cqw; width: 6.9cqw; height: 6.9cqw; }
+
+    .f8-slotlabel {
+      position: absolute; top: 38.2cqw;
+      font-size: 15px; font-weight: 600; letter-spacing: 0.16em; text-align: center;
+    }
+    .f8-slotA { left: 4.55cqw; width: 12cqw; }
+    .f8-slotB { left: 16.55cqw; width: 14.72cqw; }
+    .f8-slotC { left: 31.27cqw; width: 8.18cqw; }
+
+    /* the payoff: result cell, the arrow that reaches it, the product */
+    .f8-out {
+      position: absolute; left: 66.5cqw; top: 16.4cqw; width: 26cqw; height: 26cqw;
+      box-sizing: border-box; border: 0.12cqw solid #1F2BE0;
+    }
+    .f8-outlabel {
+      position: absolute; left: 66.5cqw; top: 13.2cqw;
+      font-size: 15px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+    }
+    .f8-arrow { position: absolute; left: 59.4cqw; top: 29.4cqw; width: 5.4cqw; border-top: 0.16cqw solid #1F2BE0; }
+    .f8-arrowhead { position: absolute; left: 64.08cqw; top: 28.72cqw; width: 1.45cqw; height: 1.45cqw; }
+    .f8-arrowhead img { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+
+    .f8-outbeef { position: absolute; left: 69.0cqw; top: 18.9cqw; width: 21cqw; height: 21cqw; }
+    .f8-outbeef img { display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+
+    .f8-name {
+      position: absolute; left: 6.5cqw; top: 13.4cqw;
+      font-family: "Newsreader", serif; font-weight: 400; font-size: 5cqw;
+      line-height: 0.98; letter-spacing: -0.005em; white-space: nowrap;
+    }
+  </style>
+
+  <div id="root" data-composition-id="08-smithing" data-width="1920" data-height="1080">
+    <div class="clip f8-ground" data-start="0" data-duration="8.5" data-track-index="0"></div>
+    <div class="clip f8-roof" data-start="0" data-duration="8.5" data-track-index="1"></div>
+    <div class="clip f8-floor" data-start="0" data-duration="8.5" data-track-index="2"></div>
+
+    <div class="clip f8-kicker" data-start="0.3" data-duration="8.2" data-track-index="4">OreFood &nbsp;·&nbsp; 矿物牛排</div>
+    <div class="clip f8-page" data-start="0.45" data-duration="8.05" data-track-index="5">08 / 09</div>
+    <div class="clip f8-paneltitle" data-start="0.85" data-duration="7.65" data-track-index="6">锻造台</div>
+
+    <div class="clip f8-cell f8-cellA" data-start="1.4" data-duration="7.1" data-track-index="7"></div>
+    <div class="clip f8-item f8-itemA" data-start="1.62" data-duration="6.88" data-track-index="8">
+      <img src="assets/px/smithing_template.png" alt="" />
+    </div>
+    <div class="clip f8-slotlabel f8-slotA" data-start="1.98" data-duration="6.52" data-track-index="9">模板</div>
+
+    <div class="clip f8-cell f8-cellB" data-start="2.85" data-duration="5.65" data-track-index="10"></div>
+    <div class="clip f8-item f8-itemB" data-start="3.07" data-duration="5.43" data-track-index="11">
+      <img src="assets/px/netherite_ingot.png" alt="" />
+    </div>
+    <div class="clip f8-slotlabel f8-slotB" data-start="3.43" data-duration="5.07" data-track-index="12">合金锭</div>
+
+    <div class="clip f8-cell f8-cellC" data-start="4.3" data-duration="4.2" data-track-index="13"></div>
+    <div class="clip f8-item f8-itemC" data-start="4.52" data-duration="3.98" data-track-index="14">
+      <img src="assets/px/diamond_beef.png" alt="" />
+    </div>
+    <div class="clip f8-slotlabel f8-slotC" data-start="4.88" data-duration="3.62" data-track-index="15">钻石牛排</div>
+
+    <div class="clip f8-out" data-start="5.55" data-duration="2.95" data-track-index="16"></div>
+    <div class="clip f8-arrow" data-start="5.75" data-duration="2.75" data-track-index="17"></div>
+    <div class="clip f8-arrowhead" data-start="5.95" data-duration="2.55" data-track-index="18">
+      <img src="assets/px/smithing_top.png" alt="" />
+    </div>
+    <div class="clip f8-outlabel" data-start="6.15" data-duration="2.35" data-track-index="19">产物</div>
+
+    <div class="clip f8-outbeef" data-start="6.55" data-duration="1.95" data-track-index="20">
+      <img src="assets/px/netherite_beef.png" alt="" />
+    </div>
+    <div class="clip f8-name" data-start="6.9" data-duration="1.6" data-track-index="21">下界合金牛排</div>
+  </div>
+
+  <script src="assets/vendor/gsap.min.js"></script>
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+
+      /* Scene 1 (0.0-1.4s) — the forge is already on screen, chrome settles in */
+      tl.fromTo(".f8-panel", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0);
+      tl.fromTo(".f8-kicker", { opacity: 0, x: -22 }, { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" }, 0.3);
+      tl.fromTo(".f8-page", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 0.45);
+      tl.fromTo(".f8-paneltitle", { opacity: 0, x: -16 }, { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" }, 0.85);
+
+      /* Scene 2 (1.4-5.2s) — the three inputs land, slowly, one at a time */
+      tl.fromTo(".f8-cellA", { opacity: 0, scale: 1.09, transformOrigin: "50% 50%" },
+        { opacity: 1, scale: 1, duration: 0.45, ease: "power3.out" }, 1.4);
+      tl.fromTo(".f8-itemA", { opacity: 0, y: -92 }, { opacity: 1, y: 0, duration: 0.66, ease: "power3.out" }, 1.62);
+      tl.fromTo(".f8-slotA", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.42, ease: "power3.out" }, 1.98);
+
+      tl.fromTo(".f8-cellB", { opacity: 0, scale: 1.09, transformOrigin: "50% 50%" },
+        { opacity: 1, scale: 1, duration: 0.45, ease: "power3.out" }, 2.85);
+      tl.fromTo(".f8-itemB", { opacity: 0, y: -92 }, { opacity: 1, y: 0, duration: 0.66, ease: "power3.out" }, 3.07);
+      tl.fromTo(".f8-slotB", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.42, ease: "power3.out" }, 3.43);
+
+      tl.fromTo(".f8-cellC", { opacity: 0, scale: 1.09, transformOrigin: "50% 50%" },
+        { opacity: 1, scale: 1, duration: 0.45, ease: "power3.out" }, 4.3);
+      tl.fromTo(".f8-itemC", { opacity: 0, y: -92 }, { opacity: 1, y: 0, duration: 0.66, ease: "power3.out" }, 4.52);
+      tl.fromTo(".f8-slotC", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.42, ease: "power3.out" }, 4.88);
+
+      /* Scene 3 (5.5-6.5s) — the result cell opens and the line reaches it */
+      tl.fromTo(".f8-out", { opacity: 0, scale: 0.94, transformOrigin: "50% 50%" },
+        { opacity: 1, scale: 1, duration: 0.55, ease: "power3.out" }, 5.55);
+      tl.fromTo(".f8-arrow", { scaleX: 0, transformOrigin: "left center" },
+        { scaleX: 1, duration: 0.5, ease: "power3.out" }, 5.75);
+      tl.fromTo(".f8-arrowhead", { opacity: 0, x: -18 }, { opacity: 1, x: 0, duration: 0.42, ease: "power3.out" }, 5.95);
+      tl.fromTo(".f8-outlabel", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.42, ease: "power3.out" }, 6.15);
+
+      /* Scene 4 (6.55-7.5s) — the payoff: the netherite beef is out, then the frame holds still */
+      tl.fromTo(".f8-outbeef", { opacity: 0, scale: 0.42, transformOrigin: "50% 50%" },
+        { opacity: 1, scale: 1, duration: 0.7, ease: "power3.out" }, 6.55);
+      tl.fromTo(".f8-name", { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 0.62, ease: "power3.out" }, 6.9);
+
+      window.__timelines["08-smithing"] = tl;
+    })();
+  </script>
+</template>

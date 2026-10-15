@@ -1,21 +1,14 @@
 package com.lyingice.orefood.forge;
 
 import com.lyingice.orefood.OreFoodConstants;
-import com.lyingice.orefood.crafting.OreFoodIngredients;
-import com.lyingice.orefood.crafting.OreFoodRecipeSugar;
-import com.lyingice.orefood.data.OreFoodDefinition;
 import com.lyingice.orefood.init.OreFoodEnchantments;
 import com.lyingice.orefood.init.OreFoodItems;
-import net.minecraft.core.Registry;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.registries.DataPackRegistryEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,17 +17,20 @@ import org.slf4j.LoggerFactory;
  *
  * <p>这里只做装配，业务逻辑分别在：
  * <ul>
- *   <li>{@link OreFoodItems}：唯一的物品 {@code orefood:ore_food}；</li>
- *   <li>{@link OreFoodEnchantments}：五个附魔（1.20.1 只能静态注册，
- *       与 1.21.1 的「放 JSON 即可」是本质不同的两条路）；</li>
+ *   <li>{@link OreFoodItems}：五种牛排物品（各自一个真实物品 id）；</li>
+ *   <li>{@link OreFoodEnchantments}：五个附魔（1.20.1 只能静态注册）；</li>
  *   <li>{@code com.lyingice.orefood.logic.OreFoodConsume} 配合
  *       {@code com.lyingice.orefood.mixin.LivingEntityEatMixin}：食用结算与耐久消耗；</li>
  *   <li>{@code com.lyingice.orefood.client.OreFoodTooltip}：提示框。</li>
  * </ul>
  *
+ * <p><b>1.2.0 删掉的东西</b>：动态注册表（{@code DataPackRegistryEvent}）、配方语法糖的
+ * 注册表暂存（{@code AddReloadListenerEvent}）、自定义配料注册（{@code FMLCommonSetupEvent}）
+ * —— 五种牛排改真物品后这些全都不需要了。
+ *
  * <p>与 NeoForge 不同，Forge 1.20.1 的 {@code mods.toml} 支持
- * {@code clientSideOnly=true}（见该文件中的注释）。本模组按双端模组处理——
- * 服务端要算营养与效果，客户端要画提示框。
+ * {@code clientSideOnly=true}。本模组按双端模组处理——服务端要算营养与效果，
+ * 客户端要画提示框。
  */
 @Mod(OreFoodConstants.MOD_ID)
 public final class OreFoodForge {
@@ -49,40 +45,14 @@ public final class OreFoodForge {
         OreFoodItems.register(modEventBus);
         OreFoodEnchantments.register(modEventBus);
 
-        // 自定义配方配料必须在这时候注册：1.20.1 的 CraftingHelper.register 是往一张
-        // 全局表里塞，而配方 JSON 从数据包加载，所以要在 FMLCommonSetupEvent 里完成。
-        modEventBus.addListener((FMLCommonSetupEvent event) -> event.enqueueWork(OreFoodIngredients::register));
-
-        // 自定义动态注册表：牛排定义由数据包写在 data/<pack>/orefood/ore_food/*.json。
-        // 第三个参数是「网络 codec」（类型是 Codec，原版同步走 NBT）——提供它就意味着
-        // 「客户端也必须装本模组」，创造模式标签页才能在客户端读到数据包定义的每一种牛排。
-        modEventBus.addListener((DataPackRegistryEvent.NewRegistry event) -> event.dataPackRegistry(
-                OreFoodDefinition.REGISTRY_KEY,
-                OreFoodDefinition.CODEC,
-                OreFoodDefinition.CODEC));
-
-        // 让数据包里定义的每一种牛排都出现在创造模式「食物与饮品」页。
+        // 让五种牛排出现在创造模式「食物与饮品」页。
         modEventBus.addListener(OreFoodItems::addToCreativeTab);
 
-        // 把注册表访问暂存给配方语法糖展开器。
-        //
-        // 时机是关键：这个事件由 ReloadableServerResources 在「组装监听器列表」时
-        // 同步触发（ReloadableServerResources:91），而真正开始跑监听器是在下一行的
-        // SimpleReloadInstance.create(...)（:92）。所以这里拿到的注册表访问
-        // ——含数据包动态注册表——早于配方解析就绪。
-        //
-        // 为什么必须绕这一道：RecipeManager 自己不持有注册表访问，它的
-        // this.context 是 ICondition.IContext，查不到 orefood:ore_food。
-        MinecraftForge.EVENT_BUS.addListener((AddReloadListenerEvent event) ->
-                OreFoodRecipeSugar.captureRegistryAccess(event.getRegistryAccess()));
-
-        // 启动诊断：把动态注册表里实际加载到的牛排定义打进日志。
-        // 数据包路径或 Codec 写错时原版是**静默**返回空注册表的（不会抛异常），
-        // 有这行日志就能一眼看出「数据包到底生效了没有」。
+        // 启动自检：打印五种牛排的实际定义，以及每个附魔在三个入口上的开关状态。
+        // 数值现在写在代码里（编译期就能发现笔误），这行日志主要用于
+        // 「加了新口味之后确认它真的注册上、数值真的是想要的」。
         MinecraftForge.EVENT_BUS.addListener((ServerStartedEvent event) -> {
-            Registry<OreFoodDefinition> registry = event.getServer().registryAccess()
-                    .registryOrThrow(OreFoodDefinition.REGISTRY_KEY);
-            LOGGER.info("Loaded {} ore food definition(s): {}", registry.size(), registry.keySet());
+            OreFoodItems.ALL.forEach(item -> LOGGER.info("  {} -> {}", item.getId(), item.get().definition()));
             logEnchantmentEntries();
         });
 

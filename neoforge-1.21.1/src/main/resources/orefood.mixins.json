@@ -4,8 +4,7 @@
   "package": "com.lyingice.orefood.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "LivingEntityEatMixin",
-    "RecipeManagerMixin"
+    "LivingEntityEatMixin"
   ],
   "injectors": {
     "defaultRequire": 1

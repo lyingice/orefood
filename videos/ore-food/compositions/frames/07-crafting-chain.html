@@ -1,0 +1,424 @@
+<template>
+  <style>
+    @font-face { font-family: "Newsreader"; src: url("assets/fonts/Newsreader_NotoSerifSC.ttf") format("truetype"); font-weight: 400; font-display: block; }
+    @font-face { font-family: "Hanken Grotesk"; src: url("assets/fonts/Hanken_Grotesk_NotoSansSC.ttf") format("truetype"); font-weight: 400 700; font-display: block; }
+    @font-face { font-family: "DM Mono"; src: url("assets/fonts/DM_Mono_Consolas.ttf") format("truetype"); font-weight: 400; font-display: block; }
+
+    #root {
+      position: absolute; inset: 0; width: 1920px; height: 1080px;
+      container-type: size; overflow: hidden;
+      font-family: "Hanken Grotesk", sans-serif; color: #1F2BE0;
+    }
+
+    /* ---------- permanent furniture ---------- */
+    .f7-ground {
+      position: absolute; inset: 0; background-color: #F0EBDE;
+      background-image:
+        linear-gradient(to right, rgba(31,43,224,0.13) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(31,43,224,0.13) 1px, transparent 1px);
+      background-size: 2cqw 2cqw;
+    }
+    .f7-roof  { position: absolute; left: 4cqw; right: 4cqw; top: 3.4cqw; border-top: 0.12cqw solid #1F2BE0; }
+    .f7-floor { position: absolute; left: 4cqw; right: 4cqw; bottom: 4.6cqw; border-top: 0.12cqw solid #1F2BE0; }
+
+    .f7-glitch {
+      position: absolute; top: 3.4cqw; bottom: 4.6cqw; right: 4cqw; width: 5.2cqw;
+      background-image: repeating-linear-gradient(to bottom, #1F2BE0 0 0.34cqw, transparent 0.34cqw 1.5cqw);
+    }
+    .f7-glitch::before,
+    .f7-glitch::after { content: ""; position: absolute; left: 0; right: 0; height: 0.34cqw; background: #1F2BE0; }
+    .f7-glitch::before { top: 8cqw; }
+    .f7-glitch::after  { top: 18cqw; }
+
+    .f7-kicker {
+      position: absolute; left: 4.6cqw; top: 5.6cqw;
+      font-size: 15px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+    }
+    .f7-page {
+      position: absolute; right: 4.6cqw; bottom: 6cqw;
+      font-family: "DM Mono", monospace; font-size: 13px; letter-spacing: 0.06em;
+    }
+    .f7-px { image-rendering: pixelated; display: block; }
+
+    /* ---------- left column: the tier chain ---------- */
+    .f7-title {
+      position: absolute; left: 4.6cqw; top: 176px;
+      font-family: "Newsreader", serif; font-size: 68px; line-height: 0.95; letter-spacing: -0.005em;
+    }
+    .f7-gui { position: absolute; left: 258px; top: 172px; width: 96px; height: 96px; }
+    .f7-ladderhead {
+      position: absolute; left: 4.6cqw; top: 268px;
+      font-size: 14px; font-weight: 600; letter-spacing: 0.16em;
+    }
+
+    .f7-rail    { position: absolute; left: 183px; top: 372px; width: 2px; height: 468px; background: #1F2BE0; opacity: 0.55; }
+    .f7-railtop { position: absolute; left: 183px; top: 262px; width: 2px; height: 96px;  background: #1F2BE0; opacity: 0.55; }
+
+    .f7-rung { position: absolute; left: 4.6cqw; width: 340px; height: 84px; }
+    .f7-r1 { top: 742px; } .f7-r2 { top: 646px; } .f7-r3 { top: 550px; }
+    .f7-r4 { top: 454px; } .f7-r5 { top: 358px; } .f7-r6 { top: 262px; }
+
+    .f7-ord {
+      position: absolute; left: 0; top: 0; width: 40px; height: 84px; line-height: 84px;
+      text-align: right; font-family: "DM Mono", monospace; font-size: 13px; letter-spacing: 0.06em;
+    }
+    .f7-chip {
+      position: absolute; left: 54px; top: 0; width: 84px; height: 84px;
+      border: 0.12cqw solid #1F2BE0; background: rgba(240,235,222,0.94);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .f7-chip img { width: 64px; height: 64px; }
+    .f7-rname {
+      position: absolute; left: 152px; top: 0; height: 84px; line-height: 84px;
+      white-space: nowrap; font-size: 19px; letter-spacing: 0.02em;
+    }
+    .f7-ghost .f7-ord, .f7-ghost .f7-chip, .f7-ghost .f7-rname { opacity: 0.34; }
+
+    .f7-stack { position: absolute; left: 4.6cqw; top: 842px; display: flex; gap: 6px; }
+    .f7-scell { width: 26px; height: 12px; background: #1F2BE0; }
+    .f7-scoff { background: rgba(31,43,224,0.18); }
+
+    /* ---------- right: the recipe bays ---------- */
+    .f7-bay {
+      position: absolute; width: 610px; height: 320px;
+      border: 0.12cqw solid #1F2BE0; background: rgba(240,235,222,0.94);
+    }
+    .f7-b1 { left: 470px;  top: 180px; }
+    .f7-b2 { left: 1110px; top: 180px; }
+    .f7-b3 { left: 470px;  top: 535px; }
+    .f7-b4 { left: 1110px; top: 535px; }
+
+    .f7-bay-idx { position: absolute; left: 20px; top: 12px; font-family: "DM Mono", monospace; font-size: 13px; letter-spacing: 0.06em; }
+    .f7-bay-ore { position: absolute; left: 58px; top: 10px; font-size: 17px; font-weight: 600; letter-spacing: 0.08em; }
+    .f7-bay-cnt { position: absolute; left: 100px; top: 13px; font-family: "DM Mono", monospace; font-size: 12px; letter-spacing: 0.06em; }
+    .f7-done    { position: absolute; left: 152px; top: 16px; width: 12px; height: 12px; background: #1F2BE0; }
+    .f7-ticks   { position: absolute; left: 436px; top: 16px; display: flex; gap: 6px; }
+    .f7-tick    { width: 14px; height: 14px; background: #1F2BE0; }
+    .f7-hr      { position: absolute; left: 20px; top: 40px; width: 570px; border-top: 0.06cqw solid rgba(31,43,224,0.35); }
+
+    .f7-grid {
+      position: absolute; left: 20px; top: 46px;
+      display: grid; grid-template-columns: repeat(3, 84px); grid-template-rows: repeat(3, 84px); gap: 8px;
+    }
+    .f7-slot {
+      width: 84px; height: 84px; image-rendering: pixelated;
+      background-image: url("assets/px/slot.png"); background-size: 100% 100%;
+    }
+    .f7-ore { width: 64px; height: 64px; justify-self: center; align-self: center; }
+    .f7-mid { position: absolute; left: 118px; top: 144px; width: 72px; height: 72px; }
+
+    .f7-arrow { position: absolute; left: 356px; top: 180px; width: 50px; border-top: 0.16cqw solid #1F2BE0; }
+    .f7-arrow::after {
+      content: ""; position: absolute; right: -0.1cqw; top: -0.5cqw;
+      border-left: 0.9cqw solid #1F2BE0; border-top: 0.5cqw solid transparent; border-bottom: 0.5cqw solid transparent;
+    }
+    .f7-res {
+      position: absolute; left: 440px; top: 125px; width: 110px; height: 110px;
+      border: 0.12cqw solid #1F2BE0; background: rgba(240,235,222,0.92);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .f7-res img { width: 72px; height: 72px; }
+    .f7-resord { position: absolute; left: 440px; top: 243px; font-family: "DM Mono", monospace; font-size: 12px; letter-spacing: 0.06em; }
+
+    /* ---------- the mistake panel ---------- */
+    .f7-err {
+      position: absolute; left: 460px; top: 508px; width: 1280px; height: 352px;
+      border: 0.12cqw solid #1F2BE0; background: rgba(240,235,222,0.97);
+    }
+    .f7-err-idx { position: absolute; left: 28px; top: 14px; font-family: "DM Mono", monospace; font-size: 13px; letter-spacing: 0.06em; }
+    .f7-err-lab { position: absolute; left: 66px; top: 12px; font-size: 17px; font-weight: 600; letter-spacing: 0.08em; }
+    .f7-err-hr  { position: absolute; left: 24px; top: 42px; width: 1232px; border-top: 0.06cqw solid rgba(31,43,224,0.35); }
+
+    .f7-egrid {
+      position: absolute; left: 36px; top: 48px;
+      display: grid; grid-template-columns: repeat(3, 92px); grid-template-rows: repeat(3, 92px); gap: 12px;
+    }
+    .f7-eslot {
+      width: 92px; height: 92px; image-rendering: pixelated;
+      background-image: url("assets/px/slot.png"); background-size: 100% 100%;
+    }
+    .f7-eore { width: 64px; height: 64px; justify-self: center; align-self: center; }
+    .f7-emid { position: absolute; left: 150px; top: 162px; width: 72px; height: 72px; }
+
+    .f7-earrow { position: absolute; left: 360px; top: 198px; width: 50px; border-top: 0.16cqw solid #1F2BE0; }
+    .f7-earrow::after {
+      content: ""; position: absolute; right: -0.1cqw; top: -0.5cqw;
+      border-left: 0.9cqw solid #1F2BE0; border-top: 0.5cqw solid transparent; border-bottom: 0.5cqw solid transparent;
+    }
+    .f7-empt {
+      position: absolute; left: 440px; top: 108px; width: 140px; height: 140px;
+      border: 0.12cqw solid #1F2BE0; background: rgba(240,235,222,0.92);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .f7-x    { width: 108px; height: 108px; }
+    .f7-dash { position: absolute; left: 440px; top: 258px; font-family: "DM Mono", monospace; font-size: 13px; letter-spacing: 0.06em; }
+    .f7-vrule { position: absolute; left: 620px; top: 48px; height: 300px; border-left: 0.12cqw solid #1F2BE0; }
+    .f7-meta {
+      position: absolute; left: 660px; top: 56px;
+      font-family: "DM Mono", monospace; font-size: 13px; letter-spacing: 0.06em; line-height: 2.1;
+    }
+    .f7-qr {
+      position: absolute; left: 1130px; top: 70px; width: 120px; height: 120px;
+      background-image:
+        linear-gradient(to right, #1F2BE0 50%, transparent 50%),
+        linear-gradient(to bottom, #1F2BE0 50%, transparent 50%);
+      background-size: 15px 15px; box-shadow: 0 0 0 0.12cqw #F0EBDE;
+    }
+  </style>
+
+  <div id="root" data-composition-id="07-crafting-chain" data-width="1920" data-height="1080">
+    <!-- furniture -->
+    <div class="clip f7-ground" data-start="0" data-duration="16.7" data-track-index="0"></div>
+    <div class="clip f7-glitch" data-start="0" data-duration="16.7" data-track-index="1"></div>
+    <div class="clip f7-roof"   data-start="0" data-duration="16.7" data-track-index="2"></div>
+    <div class="clip f7-floor"  data-start="0" data-duration="16.7" data-track-index="3"></div>
+    <div class="clip f7-kicker" data-start="0" data-duration="16.7" data-track-index="4">OreFood &nbsp;·&nbsp; 合成链</div>
+    <div class="clip f7-page"   data-start="0" data-duration="16.7" data-track-index="5">07 / 09</div>
+
+    <!-- left column -->
+    <div class="clip f7-title" data-start="0" data-duration="16.7" data-track-index="6">逐级</div>
+    <div class="clip f7-gui" data-start="0.25" data-duration="16.45" data-track-index="7">
+      <img class="f7-px" src="assets/px/gui_crafting.png" alt="" style="width:96px;height:96px;" />
+    </div>
+    <div class="clip f7-ladderhead" data-start="0.35" data-duration="16.35" data-track-index="8">合成链</div>
+
+    <div class="clip f7-rail"    data-start="0.15" data-duration="16.55" data-track-index="9"></div>
+    <div class="clip f7-railtop" data-start="8.45" data-duration="8.25" data-track-index="10"></div>
+
+    <div class="clip f7-rung f7-r1" data-start="0.5" data-duration="16.2" data-track-index="11">
+      <div class="f7-ord">01</div>
+      <div class="f7-chip"><img class="f7-px" src="assets/px/cooked_beef.png" alt="" /></div>
+      <div class="f7-rname">熟牛排</div>
+    </div>
+    <div class="clip f7-rung f7-r2" data-start="2.9" data-duration="13.8" data-track-index="12">
+      <div class="f7-ord">02</div>
+      <div class="f7-chip"><img class="f7-px" src="assets/px/copper_beef.png" alt="" /></div>
+      <div class="f7-rname">铜牛排</div>
+    </div>
+    <div class="clip f7-rung f7-r3" data-start="4.7" data-duration="12.0" data-track-index="13">
+      <div class="f7-ord">03</div>
+      <div class="f7-chip"><img class="f7-px" src="assets/px/iron_beef.png" alt="" /></div>
+      <div class="f7-rname">铁牛排</div>
+    </div>
+    <div class="clip f7-rung f7-r4" data-start="6.45" data-duration="10.25" data-track-index="14">
+      <div class="f7-ord">04</div>
+      <div class="f7-chip"><img class="f7-px" src="assets/px/golden_beef.png" alt="" /></div>
+      <div class="f7-rname">金牛排</div>
+    </div>
+    <div class="clip f7-rung f7-r5" data-start="8.2" data-duration="8.5" data-track-index="15">
+      <div class="f7-ord">05</div>
+      <div class="f7-chip"><img class="f7-px" src="assets/px/diamond_beef.png" alt="" /></div>
+      <div class="f7-rname">钻石牛排</div>
+    </div>
+    <div class="clip f7-rung f7-r6 f7-ghost" data-start="9.4" data-duration="7.3" data-track-index="16">
+      <div class="f7-ord">06</div>
+      <div class="f7-chip"><img class="f7-px" src="assets/px/netherite_beef.png" alt="" /></div>
+      <div class="f7-rname">下界合金牛排</div>
+    </div>
+
+    <div class="clip f7-stack" data-start="0" data-duration="16.7" data-track-index="17">
+      <i class="f7-scell f7-sc1"></i><i class="f7-scell f7-sc2"></i><i class="f7-scell f7-sc3"></i>
+      <i class="f7-scell f7-sc4"></i><i class="f7-scell f7-sc5"></i><i class="f7-scell f7-scoff f7-sc6"></i>
+    </div>
+
+    <!-- bay 1 : copper -->
+    <div class="clip f7-bay f7-b1" data-start="1.25" data-duration="15.45" data-track-index="18">
+      <div class="f7-bay-idx">01</div><div class="f7-bay-ore">铜</div><div class="f7-bay-cnt">×8</div>
+      <div class="f7-done"></div>
+      <div class="f7-ticks"><i class="f7-tick"></i><i class="f7-tick"></i><i class="f7-tick"></i><i class="f7-tick"></i><i class="f7-tick"></i><i class="f7-tick"></i><i class="f7-tick"></i><i class="f7-tick"></i></div>
+      <div class="f7-hr"></div>
+      <div class="f7-grid"><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div></div>
+      <div class="f7-grid">
+        <img class="f7-px f7-ore" style="grid-area:1/1" src="assets/px/copper_ingot.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:1/2" src="assets/px/copper_ingot.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:1/3" src="assets/px/copper_ingot.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:2/3" src="assets/px/copper_ingot.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:3/3" src="assets/px/copper_ingot.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:3/2" src="assets/px/copper_ingot.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:3/1" src="assets/px/copper_ingot.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:2/1" src="assets/px/copper_ingot.png" alt="" />
+      </div>
+      <img class="f7-px f7-mid" src="assets/px/cooked_beef.png" alt="" />
+      <div class="f7-arrow"></div>
+      <div class="f7-res"><img class="f7-px" src="assets/px/copper_beef.png" alt="" /></div>
+      <div class="f7-resord">02</div>
+    </div>
+
+    <!-- bay 2 : iron -->
+    <div class="clip f7-bay f7-b2" data-start="3.0" data-duration="13.7" data-track-index="19">
+      <div class="f7-bay-idx">02</div><div class="f7-bay-ore">铁</div><div class="f7-bay-cnt">×8</div>
+      <div class="f7-done"></div>
+      <div class="f7-ticks"><i class="f7-tick"></i><i class="f7-tick"></i><i class="f7-tick"></i><i class="f7-tick"></i><i class="f7-tick"></i><i class="f7-tick"></i><i class="f7-tick"></i><i class="f7-tick"></i></div>
+      <div class="f7-hr"></div>
+      <div class="f7-grid"><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div></div>
+      <div class="f7-grid">
+        <img class="f7-px f7-ore" style="grid-area:1/1" src="assets/px/iron_ingot.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:1/2" src="assets/px/iron_ingot.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:1/3" src="assets/px/iron_ingot.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:2/3" src="assets/px/iron_ingot.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:3/3" src="assets/px/iron_ingot.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:3/2" src="assets/px/iron_ingot.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:3/1" src="assets/px/iron_ingot.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:2/1" src="assets/px/iron_ingot.png" alt="" />
+      </div>
+      <img class="f7-px f7-mid" src="assets/px/copper_beef.png" alt="" />
+      <div class="f7-arrow"></div>
+      <div class="f7-res"><img class="f7-px" src="assets/px/iron_beef.png" alt="" /></div>
+      <div class="f7-resord">03</div>
+    </div>
+
+    <!-- bay 3 : gold -->
+    <div class="clip f7-bay f7-b3" data-start="4.75" data-duration="11.95" data-track-index="20">
+      <div class="f7-bay-idx">03</div><div class="f7-bay-ore">金</div><div class="f7-bay-cnt">×8</div>
+      <div class="f7-done"></div>
+      <div class="f7-ticks"><i class="f7-tick"></i><i class="f7-tick"></i><i class="f7-tick"></i><i class="f7-tick"></i><i class="f7-tick"></i><i class="f7-tick"></i><i class="f7-tick"></i><i class="f7-tick"></i></div>
+      <div class="f7-hr"></div>
+      <div class="f7-grid"><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div></div>
+      <div class="f7-grid">
+        <img class="f7-px f7-ore" style="grid-area:1/1" src="assets/px/gold_ingot.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:1/2" src="assets/px/gold_ingot.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:1/3" src="assets/px/gold_ingot.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:2/3" src="assets/px/gold_ingot.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:3/3" src="assets/px/gold_ingot.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:3/2" src="assets/px/gold_ingot.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:3/1" src="assets/px/gold_ingot.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:2/1" src="assets/px/gold_ingot.png" alt="" />
+      </div>
+      <img class="f7-px f7-mid" src="assets/px/iron_beef.png" alt="" />
+      <div class="f7-arrow"></div>
+      <div class="f7-res"><img class="f7-px" src="assets/px/golden_beef.png" alt="" /></div>
+      <div class="f7-resord">04</div>
+    </div>
+
+    <!-- bay 4 : diamond -->
+    <div class="clip f7-bay f7-b4" data-start="6.5" data-duration="10.2" data-track-index="21">
+      <div class="f7-bay-idx">04</div><div class="f7-bay-ore">钻</div><div class="f7-bay-cnt">×8</div>
+      <div class="f7-done"></div>
+      <div class="f7-ticks"><i class="f7-tick"></i><i class="f7-tick"></i><i class="f7-tick"></i><i class="f7-tick"></i><i class="f7-tick"></i><i class="f7-tick"></i><i class="f7-tick"></i><i class="f7-tick"></i></div>
+      <div class="f7-hr"></div>
+      <div class="f7-grid"><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div><div class="f7-slot"></div></div>
+      <div class="f7-grid">
+        <img class="f7-px f7-ore" style="grid-area:1/1" src="assets/px/diamond.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:1/2" src="assets/px/diamond.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:1/3" src="assets/px/diamond.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:2/3" src="assets/px/diamond.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:3/3" src="assets/px/diamond.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:3/2" src="assets/px/diamond.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:3/1" src="assets/px/diamond.png" alt="" />
+        <img class="f7-px f7-ore" style="grid-area:2/1" src="assets/px/diamond.png" alt="" />
+      </div>
+      <img class="f7-px f7-mid" src="assets/px/golden_beef.png" alt="" />
+      <div class="f7-arrow"></div>
+      <div class="f7-res"><img class="f7-px" src="assets/px/diamond_beef.png" alt="" /></div>
+      <div class="f7-resord">05</div>
+    </div>
+
+    <!-- the mistake -->
+    <div class="clip f7-err" data-start="10.25" data-duration="6.45" data-track-index="22">
+      <div class="f7-err-idx">05</div>
+      <div class="f7-err-lab">错误</div>
+      <div class="f7-ticks"><i class="f7-tick f7-etick"></i><i class="f7-tick f7-etick"></i><i class="f7-tick f7-etick"></i><i class="f7-tick f7-etick"></i><i class="f7-tick f7-etick"></i><i class="f7-tick f7-etick"></i><i class="f7-tick f7-etick"></i><i class="f7-tick f7-etick"></i></div>
+      <div class="f7-err-hr"></div>
+      <div class="f7-egrid">
+        <div class="f7-eslot"></div><div class="f7-eslot"></div><div class="f7-eslot"></div>
+        <div class="f7-eslot"></div><div class="f7-eslot"></div><div class="f7-eslot"></div>
+        <div class="f7-eslot"></div><div class="f7-eslot"></div><div class="f7-eslot"></div>
+      </div>
+      <div class="f7-egrid">
+        <img class="f7-px f7-eore" style="grid-area:1/1" src="assets/px/diamond.png" alt="" />
+        <img class="f7-px f7-eore" style="grid-area:1/2" src="assets/px/diamond.png" alt="" />
+        <img class="f7-px f7-eore" style="grid-area:1/3" src="assets/px/diamond.png" alt="" />
+        <img class="f7-px f7-eore" style="grid-area:2/3" src="assets/px/diamond.png" alt="" />
+        <img class="f7-px f7-eore" style="grid-area:3/3" src="assets/px/diamond.png" alt="" />
+        <img class="f7-px f7-eore" style="grid-area:3/2" src="assets/px/diamond.png" alt="" />
+        <img class="f7-px f7-eore" style="grid-area:3/1" src="assets/px/diamond.png" alt="" />
+        <img class="f7-px f7-eore" style="grid-area:2/1" src="assets/px/diamond.png" alt="" />
+      </div>
+      <img class="f7-px f7-emid" src="assets/px/diamond_beef.png" alt="" />
+      <div class="f7-earrow"></div>
+      <div class="f7-empt"><img class="f7-px f7-x" src="assets/px/error.png" alt="" /></div>
+      <div class="f7-dash">—</div>
+      <div class="f7-vrule"></div>
+      <div class="f7-meta">RECIPE&nbsp;&nbsp;05<br />8&nbsp;&nbsp;×&nbsp;&nbsp;DIAMOND&nbsp;&nbsp;+&nbsp;&nbsp;T05<br />=&nbsp;&nbsp;—</div>
+      <div class="f7-qr"></div>
+    </div>
+  </div>
+
+  <script src="assets/vendor/gsap.min.js"></script>
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+      var E = "power3.out";
+
+      /* ---- Scene A (0.0-1.3) : sign-in ---- */
+      tl.fromTo(".f7-title", { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 0.55, ease: E }, 0);
+      tl.fromTo(".f7-kicker", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: E }, 0.1);
+      tl.fromTo(".f7-page", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: E }, 0.15);
+      tl.fromTo(".f7-gui", { opacity: 0, scale: 0.8, transformOrigin: "50% 50%" }, { opacity: 1, scale: 1, duration: 0.5, ease: E }, 0.3);
+      tl.fromTo(".f7-ladderhead", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45, ease: E }, 0.4);
+      tl.fromTo(".f7-rail", { scaleY: 0, transformOrigin: "50% 100%" }, { scaleY: 1, duration: 0.6, ease: E }, 0.2);
+      tl.fromTo(".f7-railtop", { scaleY: 0, transformOrigin: "50% 100%" }, { scaleY: 1, duration: 0.5, ease: E }, 8.5);
+
+      /* ---- the chain: rungs + progress cells ---- */
+      function rung(n, t) {
+        tl.fromTo(".f7-r" + n, { opacity: 0, x: 24 }, { opacity: 1, x: 0, duration: 0.5, ease: E }, t);
+      }
+      function cell(n, t) {
+        tl.fromTo(".f7-sc" + n, { opacity: 0, scale: 0.4, transformOrigin: "50% 50%" }, { opacity: 1, scale: 1, duration: 0.3, ease: E }, t);
+      }
+      rung(1, 0.55); rung(2, 2.95); rung(3, 4.75); rung(4, 6.5); rung(5, 8.25); rung(6, 9.45);
+      cell(1, 0.55); cell(2, 2.95); cell(3, 4.75); cell(4, 6.5); cell(5, 8.25); cell(6, 9.85);
+
+      /* ---- the bays: same graphic language, four times ---- */
+      function bay(k, t0) {
+        var b = ".f7-b" + k;
+        tl.fromTo(b, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, t0);
+        tl.fromTo(b + " .f7-bay-idx, " + b + " .f7-bay-ore, " + b + " .f7-bay-cnt",
+          { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4, ease: E, stagger: 0.06 }, t0 + 0.2);
+        tl.fromTo(b + " .f7-hr", { scaleX: 0, transformOrigin: "left center" }, { scaleX: 1, duration: 0.45, ease: E }, t0 + 0.35);
+        tl.fromTo(b + " .f7-ore", { opacity: 0, scale: 0.4, transformOrigin: "50% 50%" },
+          { opacity: 1, scale: 1, duration: 0.3, ease: E, stagger: 0.08 }, t0 + 0.45);
+        tl.fromTo(b + " .f7-tick", { opacity: 0, scale: 0.3, transformOrigin: "50% 50%" },
+          { opacity: 1, scale: 1, duration: 0.26, ease: E, stagger: 0.08 }, t0 + 0.45);
+        tl.fromTo(b + " .f7-mid", { opacity: 0, scale: 0.5, y: -16, transformOrigin: "50% 50%" },
+          { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: E }, t0 + 1.35);
+        tl.fromTo(b + " .f7-arrow", { scaleX: 0, transformOrigin: "left center" }, { scaleX: 1, duration: 0.35, ease: E }, t0 + 1.5);
+        tl.fromTo(b + " .f7-res", { opacity: 0, scale: 0.72, transformOrigin: "50% 50%" }, { opacity: 1, scale: 1, duration: 0.4, ease: E }, t0 + 1.6);
+        tl.fromTo(b + " .f7-resord", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.35, ease: E }, t0 + 1.65);
+      }
+      bay(1, 1.3); bay(2, 3.05); bay(3, 4.8); bay(4, 6.55);
+
+      /* ---- recap beat (8.6-9.9) : every bay confirmed, the rail reaches for the next tier ---- */
+      ["1", "2", "3", "4"].forEach(function (k, i) {
+        tl.fromTo(".f7-b" + k + " .f7-done", { opacity: 0, scale: 0.3, transformOrigin: "50% 50%" },
+          { opacity: 1, scale: 1, duration: 0.3, ease: E }, 8.6 + i * 0.2);
+      });
+
+      /* ---- Scene F (10.3-14.0) : the wrong tier, the empty result, the X ---- */
+      tl.fromTo(".f7-err", { opacity: 0, y: 36 }, { opacity: 1, y: 0, duration: 0.6, ease: E }, 10.3);
+      tl.fromTo(".f7-err-idx, .f7-err-lab", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4, ease: E, stagger: 0.07 }, 10.5);
+      tl.fromTo(".f7-err-hr", { scaleX: 0, transformOrigin: "left center" }, { scaleX: 1, duration: 0.5, ease: E }, 10.6);
+      tl.fromTo(".f7-eore", { opacity: 0, scale: 0.4, transformOrigin: "50% 50%" },
+        { opacity: 1, scale: 1, duration: 0.3, ease: E, stagger: 0.085 }, 10.9);
+      tl.fromTo(".f7-etick", { opacity: 0, scale: 0.3, transformOrigin: "50% 50%" },
+        { opacity: 1, scale: 1, duration: 0.26, ease: E, stagger: 0.085 }, 10.9);
+      tl.fromTo(".f7-emid", { opacity: 0, scale: 0.5, y: -18, transformOrigin: "50% 50%" },
+        { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: E }, 11.9);
+      tl.fromTo(".f7-earrow", { scaleX: 0, transformOrigin: "left center" }, { scaleX: 1, duration: 0.35, ease: E }, 12.1);
+      tl.fromTo(".f7-meta", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4, ease: E }, 12.35);
+      tl.fromTo(".f7-empt", { opacity: 0, scale: 0.88, transformOrigin: "50% 50%" }, { opacity: 1, scale: 1, duration: 0.4, ease: E }, 12.55);
+      tl.fromTo(".f7-dash", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: E }, 12.85);
+      tl.fromTo(".f7-x", { opacity: 0, scale: 1.7, transformOrigin: "50% 50%" }, { opacity: 1, scale: 1, duration: 0.45, ease: E }, 13.25);
+      tl.fromTo(".f7-qr", { opacity: 0, scale: 0.8, transformOrigin: "50% 50%" }, { opacity: 1, scale: 1, duration: 0.4, ease: E }, 13.8);
+
+      /* ---- held read (14.0-16.7) : low-amplitude drift only ---- */
+      tl.fromTo(".f7-x", { rotation: -1.4 }, { rotation: 1.4, duration: 2.6, ease: "sine.inOut" }, 14.1);
+      tl.fromTo(".f7-glitch", { backgroundPositionY: "0px" }, { backgroundPositionY: "-1.5cqw", duration: 2.6, ease: "none" }, 14.1);
+      tl.fromTo(".f7-ghost .f7-ord, .f7-ghost .f7-chip, .f7-ghost .f7-rname",
+        { opacity: 0.34 }, { opacity: 0.62, duration: 2.6, ease: "sine.inOut" }, 14.0);
+
+      window.__timelines["07-crafting-chain"] = tl;
+    })();
+  </script>
+</template>

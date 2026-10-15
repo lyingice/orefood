@@ -1,0 +1,218 @@
+<template>
+  <style>
+    @font-face { font-family: "Newsreader"; src: url("assets/fonts/Newsreader_NotoSerifSC.ttf") format("truetype"); font-weight: 400; font-display: block; }
+    @font-face { font-family: "Hanken Grotesk"; src: url("assets/fonts/Hanken_Grotesk_NotoSansSC.ttf") format("truetype"); font-weight: 400 700; font-display: block; }
+    @font-face { font-family: "DM Mono"; src: url("assets/fonts/DM_Mono_Consolas.ttf") format("truetype"); font-weight: 400; font-display: block; }
+
+    #root {
+      position: absolute; inset: 0; width: 1920px; height: 1080px;
+      container-type: size; overflow: hidden;
+      font-family: "Hanken Grotesk", sans-serif; color: #1F2BE0;
+    }
+
+    /* ---------------- permanent furniture ---------------- */
+    .d3-ground {
+      position: absolute; inset: 0; background-color: #F0EBDE;
+      background-image:
+        linear-gradient(to right, rgba(31,43,224,0.13) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(31,43,224,0.13) 1px, transparent 1px);
+      background-size: 2cqw 2cqw;
+    }
+    .d3-roof { position: absolute; left: 4cqw; right: 4cqw; top: 3.4cqw; border-top: 0.12cqw solid #1F2BE0; }
+    .d3-floor { position: absolute; left: 4cqw; right: 4cqw; bottom: 4.6cqw; border-top: 0.12cqw solid #1F2BE0; }
+    .d3-glitch {
+      position: absolute; top: 3.4cqw; bottom: 4.6cqw; right: 4cqw; width: 5.2cqw;
+      background-image: repeating-linear-gradient(to bottom, #1F2BE0 0 0.34cqw, transparent 0.34cqw 1.5cqw);
+    }
+    .d3-glitch::before, .d3-glitch::after { content: ""; position: absolute; left: 0; right: 0; height: 0.34cqw; background: #1F2BE0; }
+    .d3-glitch::before { top: 6cqw; }
+    .d3-glitch::after { top: 14cqw; }
+    .d3-qr {
+      position: absolute; right: 11cqw; top: 6.8cqw; width: 4.4cqw; height: 4.4cqw;
+      background-image:
+        linear-gradient(to right, #1F2BE0 50%, transparent 50%),
+        linear-gradient(to bottom, #1F2BE0 50%, transparent 50%);
+      background-size: 1.1cqw 1.1cqw; box-shadow: 0 0 0 0.12cqw #F0EBDE;
+    }
+    .d3-chrome-l { position: absolute; left: 4.6cqw; bottom: 6.4cqw; font-size: 13px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; }
+    .d3-chrome-r { position: absolute; right: 4.6cqw; bottom: 6.4cqw; font-family: "DM Mono", monospace; font-size: 13px; letter-spacing: 0.06em; }
+
+    /* ---------------- camera strip: four viewports ---------------- */
+    .d3-stage { position: absolute; left: 0; top: 0; width: 400cqw; height: 56.25cqw; }
+    .d3-act { position: absolute; top: 0; width: 100cqw; height: 56.25cqw; }
+    .d3-act1 { left: 0; }
+    .d3-act2 { left: 100cqw; }
+    .d3-act3 { left: 200cqw; }
+    .d3-act4 { left: 300cqw; }
+
+    /* ---------------- shared atoms ---------------- */
+    .d3-micro { font-family: "Hanken Grotesk", sans-serif; font-size: 16px; font-weight: 600; letter-spacing: 0.16em; }
+    .d3-num-s { font-family: "Hanken Grotesk", sans-serif; font-size: 16px; font-weight: 600; letter-spacing: 0.16em; }
+    .d3-small { font-family: "Hanken Grotesk", sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0.16em; }
+    .d3-chrome-s { font-family: "DM Mono", monospace; font-size: 13px; letter-spacing: 0.06em; }
+    .d3-head { font-family: "Newsreader", serif; font-weight: 400; line-height: 1.05; letter-spacing: -0.005em; }
+    .d3-num { font-family: "Newsreader", serif; font-weight: 400; line-height: 0.9; letter-spacing: -0.015em; }
+    .d3-icon { position: absolute; }
+    .d3-icon img { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+    .d3-bar { position: absolute; display: flex; gap: 0.3cqw; height: 1.4cqw; }
+    .d3-cell { flex: 1 1 0; background: #1F2BE0; }
+    .d3-strike { position: absolute; }
+    .d3-strike .d3-strike-bar { display: block; height: 0.34cqw; background: #1F2BE0; transform-origin: center center; }
+
+    /* ---------------- act 1: equipment durability, struck out ---------------- */
+    .d3-a1-tag { position: absolute; left: 6.6cqw; top: 6cqw; }
+    .d3-a1-sword { left: 8.5cqw; top: 11.5cqw; width: 14cqw; }
+    .d3-a1-chest { left: 27cqw; top: 11.5cqw; width: 14cqw; }
+    .d3-a1-bar1 { left: 8.5cqw; top: 28.4cqw; width: 14cqw; }
+    .d3-a1-bar2 { left: 27cqw; top: 28.4cqw; width: 14cqw; }
+    .d3-a1-name1 { position: absolute; left: 8.5cqw; top: 30.6cqw; }
+    .d3-a1-name2 { position: absolute; left: 27cqw; top: 30.6cqw; }
+    .d3-a1-s1 { left: 6.3cqw; top: 19cqw; width: 36.4cqw; transform: rotate(-9deg); }
+    .d3-a1-s2 { left: 6.3cqw; top: 19cqw; width: 36.4cqw; transform: rotate(9deg); }
+    .d3-a1-head { position: absolute; left: 55cqw; top: 16.5cqw; font-size: 5.7cqw; }
+
+    /* ---------------- act 2: iron steak, 16-cell bar ---------------- */
+    .d3-a2-tag { position: absolute; left: 6.6cqw; top: 6cqw; }
+    .d3-a2-icon { left: 7.5cqw; top: 11cqw; width: 17cqw; }
+    .d3-a2-num { position: absolute; left: 30cqw; top: 12cqw; font-size: 5.7cqw; }
+    .d3-a2-unit { position: absolute; left: 37.6cqw; top: 15.4cqw; }
+    .d3-a2-bar { left: 30cqw; top: 21.5cqw; width: 46cqw; height: 2.55cqw; gap: 0.35cqw; }
+    .d3-a2-m { position: absolute; top: 19.2cqw; font-family: "DM Mono", monospace; font-size: 13px; letter-spacing: 0.06em; }
+
+    /* ---------------- act 3: 128 cells ---------------- */
+    .d3-a3-tag { position: absolute; left: 10.5cqw; top: 8cqw; }
+    .d3-a3-icon { left: 10.5cqw; top: 13.5cqw; width: 17cqw; }
+    .d3-a3-num { position: absolute; left: 29.5cqw; top: 12.8cqw; font-size: 9.2cqw; }
+    .d3-a3-unit { position: absolute; left: 46.4cqw; top: 17.4cqw; }
+    .d3-field { position: absolute; left: 56cqw; top: 12cqw; display: grid; gap: 0.3cqw; grid-template-columns: repeat(16, 1.075cqw); grid-auto-rows: 1.075cqw; }
+    .d3-fc { background: #1F2BE0; }
+    .d3-a3-chrome { position: absolute; left: 56cqw; top: 24cqw; }
+
+    /* ---------------- act 4: one per slot ---------------- */
+    .d3-a4-head { position: absolute; left: 6.5cqw; top: 8.5cqw; font-size: 5.7cqw; }
+    .d3-a4-bag { position: absolute; left: 6.5cqw; top: 21cqw; display: grid; gap: 0.9cqw; grid-template-columns: repeat(8, 5.4cqw); grid-auto-rows: 5.4cqw; }
+    .d3-slot { position: relative; }
+    .d3-slot .d3-slotbg { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+    .d3-slot .d3-slotitem { position: absolute; left: 0.6cqw; top: 0.6cqw; width: 4.2cqw; height: 4.2cqw; image-rendering: pixelated; }
+    .d3-slot .d3-a4-one { position: absolute; right: 0.3cqw; bottom: 0.15cqw; font-family: "DM Mono", monospace; font-size: 13px; letter-spacing: 0.04em; }
+    .d3-a4-tag { position: absolute; left: 6.5cqw; top: 34.3cqw; }
+  </style>
+
+  <div id="root" data-composition-id="03-durability" data-width="1920" data-height="1080">
+    <div class="clip d3-ground" data-start="0" data-duration="10" data-track-index="0"></div>
+    <div class="clip d3-glitch" data-start="0" data-duration="10" data-track-index="1"></div>
+    <div class="clip d3-roof" data-start="0" data-duration="10" data-track-index="2"></div>
+    <div class="clip d3-floor" data-start="0" data-duration="10" data-track-index="3"></div>
+
+    <div class="clip d3-stage" data-start="0" data-duration="10" data-track-index="4">
+
+      <!-- ============ act 1 — equipment durability ============ -->
+      <div class="d3-act d3-act1">
+        <div class="d3-micro d3-a1-tag">装备耐久</div>
+        <div class="d3-icon d3-a1-sword"><img src="assets/px/diamond_sword.png" alt="" /></div>
+        <div class="d3-icon d3-a1-chest"><img src="assets/px/netherite_chestplate.png" alt="" /></div>
+        <div class="d3-bar d3-a1-bar1"><span class="d3-cell"></span><span class="d3-cell"></span><span class="d3-cell"></span><span class="d3-cell"></span><span class="d3-cell"></span><span class="d3-cell"></span><span class="d3-cell"></span><span class="d3-cell"></span></div>
+        <div class="d3-bar d3-a1-bar2"><span class="d3-cell"></span><span class="d3-cell"></span><span class="d3-cell"></span><span class="d3-cell"></span><span class="d3-cell"></span><span class="d3-cell"></span><span class="d3-cell"></span><span class="d3-cell"></span></div>
+        <div class="d3-small d3-a1-name1">钻石剑</div>
+        <div class="d3-small d3-a1-name2">下界合金胸甲</div>
+        <div class="d3-strike d3-a1-s1"><span class="d3-strike-bar"></span></div>
+        <div class="d3-strike d3-a1-s2"><span class="d3-strike-bar"></span></div>
+        <div class="d3-head d3-a1-head">用坏就没了</div>
+      </div>
+
+      <!-- ============ act 2 — 16 bites, item never leaves ============ -->
+      <div class="d3-act d3-act2">
+        <div class="d3-micro d3-a2-tag">铁牛排</div>
+        <div class="d3-icon d3-a2-icon"><img src="assets/px/iron_beef.png" alt="" /></div>
+        <div class="d3-num d3-a2-num">16</div>
+        <div class="d3-micro d3-a2-unit">格</div>
+        <div class="d3-bar d3-a2-bar"><span class="d3-cell d3-a2-c1"></span><span class="d3-cell d3-a2-c2"></span><span class="d3-cell d3-a2-c3"></span><span class="d3-cell d3-a2-c4"></span><span class="d3-cell d3-a2-c5"></span><span class="d3-cell d3-a2-c6"></span><span class="d3-cell d3-a2-c7"></span><span class="d3-cell d3-a2-c8"></span><span class="d3-cell d3-a2-c9"></span><span class="d3-cell d3-a2-c10"></span><span class="d3-cell d3-a2-c11"></span><span class="d3-cell d3-a2-c12"></span><span class="d3-cell d3-a2-c13"></span><span class="d3-cell d3-a2-c14"></span><span class="d3-cell d3-a2-c15"></span><span class="d3-cell d3-a2-c16"></span></div>
+        <div class="d3-a2-m d3-a2-m1" style="left: 65.15cqw;">-1</div>
+        <div class="d3-a2-m d3-a2-m2" style="left: 68.05cqw;">-1</div>
+        <div class="d3-a2-m d3-a2-m3" style="left: 70.95cqw;">-1</div>
+        <div class="d3-a2-m d3-a2-m4" style="left: 73.85cqw;">-1</div>
+      </div>
+
+      <!-- ============ act 3 — pushed in to 128 ============ -->
+      <div class="d3-act d3-act3">
+        <div class="d3-micro d3-a3-tag">下界合金牛排</div>
+        <div class="d3-icon d3-a3-icon"><img src="assets/px/netherite_beef.png" alt="" /></div>
+        <div class="d3-num d3-a3-num">128</div>
+        <div class="d3-micro d3-a3-unit">格耐久</div>
+        <div class="d3-field"><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i><i class="d3-fc"></i></div>
+      </div>
+
+      <!-- ============ act 4 — one per slot ============ -->
+      <div class="d3-act d3-act4">
+        <div class="d3-head d3-a4-head">不可堆叠</div>
+        <div class="d3-a4-bag"><div class="d3-slot d3-a4-r1 d3-a4-s1"><img class="d3-slotbg" src="assets/px/slot.png" alt="" /><img class="d3-slotitem d3-a4-item" src="assets/px/netherite_beef.png" alt="" /><span class="d3-a4-one">1</span></div><div class="d3-slot d3-a4-r1 d3-a4-s2"><img class="d3-slotbg" src="assets/px/slot.png" alt="" /><img class="d3-slotitem d3-a4-item" src="assets/px/netherite_beef.png" alt="" /><span class="d3-a4-one">1</span></div><div class="d3-slot d3-a4-r1 d3-a4-s3"><img class="d3-slotbg" src="assets/px/slot.png" alt="" /><img class="d3-slotitem d3-a4-item" src="assets/px/netherite_beef.png" alt="" /><span class="d3-a4-one">1</span></div><div class="d3-slot d3-a4-r1 d3-a4-s4"><img class="d3-slotbg" src="assets/px/slot.png" alt="" /><img class="d3-slotitem d3-a4-item" src="assets/px/netherite_beef.png" alt="" /><span class="d3-a4-one">1</span></div><div class="d3-slot d3-a4-r1 d3-a4-s5"><img class="d3-slotbg" src="assets/px/slot.png" alt="" /></div><div class="d3-slot d3-a4-r1 d3-a4-s6"><img class="d3-slotbg" src="assets/px/slot.png" alt="" /></div><div class="d3-slot d3-a4-r1 d3-a4-s7"><img class="d3-slotbg" src="assets/px/slot.png" alt="" /></div><div class="d3-slot d3-a4-r1 d3-a4-s8"><img class="d3-slotbg" src="assets/px/slot.png" alt="" /></div><div class="d3-slot d3-a4-r2 d3-a4-s9"><img class="d3-slotbg" src="assets/px/slot.png" alt="" /></div><div class="d3-slot d3-a4-r2 d3-a4-s10"><img class="d3-slotbg" src="assets/px/slot.png" alt="" /></div><div class="d3-slot d3-a4-r2 d3-a4-s11"><img class="d3-slotbg" src="assets/px/slot.png" alt="" /></div><div class="d3-slot d3-a4-r2 d3-a4-s12"><img class="d3-slotbg" src="assets/px/slot.png" alt="" /></div><div class="d3-slot d3-a4-r2 d3-a4-s13"><img class="d3-slotbg" src="assets/px/slot.png" alt="" /></div><div class="d3-slot d3-a4-r2 d3-a4-s14"><img class="d3-slotbg" src="assets/px/slot.png" alt="" /></div><div class="d3-slot d3-a4-r2 d3-a4-s15"><img class="d3-slotbg" src="assets/px/slot.png" alt="" /></div><div class="d3-slot d3-a4-r3 d3-a4-s16"><img class="d3-slotbg" src="assets/px/slot.png" alt="" /></div><div class="d3-slot d3-a4-r3 d3-a4-s17"><img class="d3-slotbg" src="assets/px/slot.png" alt="" /></div><div class="d3-slot d3-a4-r3 d3-a4-s18"><img class="d3-slotbg" src="assets/px/slot.png" alt="" /></div><div class="d3-slot d3-a4-r3 d3-a4-s19"><img class="d3-slotbg" src="assets/px/slot.png" alt="" /></div><div class="d3-slot d3-a4-r3 d3-a4-s20"><img class="d3-slotbg" src="assets/px/slot.png" alt="" /></div><div class="d3-slot d3-a4-r3 d3-a4-s21"><img class="d3-slotbg" src="assets/px/slot.png" alt="" /></div><div class="d3-slot d3-a4-r3 d3-a4-s22"><img class="d3-slotbg" src="assets/px/slot.png" alt="" /></div><div class="d3-slot d3-a4-r3 d3-a4-s23"><img class="d3-slotbg" src="assets/px/slot.png" alt="" /></div>
+        <div class="d3-micro d3-a4-tag">一格一块</div>
+      </div>
+    </div>
+
+    <div class="clip d3-qr" data-start="0.85" data-duration="9.15" data-track-index="5"></div>
+    <div class="clip d3-chrome-l" data-start="0" data-duration="10" data-track-index="6">OreFood &nbsp;·&nbsp; 矿物牛排</div>
+    <div class="clip d3-chrome-r" data-start="0" data-duration="10" data-track-index="7">03 / 09</div>
+  </div>
+
+  <script src="assets/vendor/gsap.min.js"></script>
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+
+      /* ---- camera: one 400cqw strip, four viewports ---- */
+      tl.set(".d3-stage", { xPercent: 0 }, 0);
+      tl.to(".d3-stage", { xPercent: -25, duration: 0.72, ease: "power3.out" }, 2.85);
+      tl.to(".d3-stage", { xPercent: -50, duration: 0.72, ease: "power3.out" }, 5.55);
+      tl.to(".d3-stage", { xPercent: -75, duration: 0.72, ease: "power3.out" }, 8.05);
+
+      /* ---- scene 1 (0.0-2.85) — worn gear, crossed out ---- */
+      tl.fromTo(".d3-a1-sword", { opacity: 0, y: -22, x: -20 }, { opacity: 1, y: 0, x: 0, duration: 0.62, ease: "power3.out" }, 0.10);
+      tl.fromTo(".d3-a1-chest", { opacity: 0, y: -22, x: 20 }, { opacity: 1, y: 0, x: 0, duration: 0.62, ease: "power3.out" }, 0.30);
+      tl.fromTo(".d3-a1-tag", { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" }, 0.50);
+      tl.fromTo(".d3-a1-bar1 .d3-cell", { opacity: 0, scaleX: 0 }, { opacity: 1, scaleX: 1, duration: 0.32, ease: "power3.out", stagger: 0.03, transformOrigin: "left center" }, 0.70);
+      tl.fromTo(".d3-a1-bar2 .d3-cell", { opacity: 0, scaleX: 0 }, { opacity: 1, scaleX: 1, duration: 0.32, ease: "power3.out", stagger: 0.03, transformOrigin: "left center" }, 0.88);
+      tl.fromTo(".d3-a1-name1", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power3.out" }, 1.10);
+      tl.fromTo(".d3-a1-name2", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power3.out" }, 1.24);
+      tl.fromTo(".d3-a1-s1 .d3-strike-bar", { scaleX: 0 }, { scaleX: 1, duration: 0.45, ease: "power3.out" }, 1.50);
+      tl.fromTo(".d3-a1-s2 .d3-strike-bar", { scaleX: 0 }, { scaleX: 1, duration: 0.45, ease: "power3.out" }, 1.66);
+      tl.fromTo(".d3-a1-head", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.66, ease: "power3.out" }, 2.15);
+      tl.to(".d3-a1-bar1 .d3-cell, .d3-a1-bar2 .d3-cell", { opacity: 0.14, duration: 0.4, ease: "power3.out", stagger: 0.02 }, 2.38);
+
+      /* ---- scene 2 (2.85-5.55) — sixteen cells, four bites ---- */
+      tl.fromTo(".d3-a2-icon", { opacity: 0, scale: 0.55 }, { opacity: 1, scale: 1, duration: 0.66, ease: "power3.out", transformOrigin: "50% 50%" }, 3.05);
+      tl.fromTo(".d3-a2-tag", { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" }, 3.35);
+      tl.fromTo(".d3-a2-num", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 3.45);
+      tl.fromTo(".d3-a2-unit", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power3.out" }, 3.72);
+      tl.fromTo(".d3-a2-bar .d3-cell", { opacity: 0, scaleY: 0 }, { opacity: 1, scaleY: 1, duration: 0.3, ease: "power3.out", stagger: 0.02, transformOrigin: "50% 100%" }, 3.60);
+      tl.to(".d3-a2-c16", { opacity: 0.14, duration: 0.34, ease: "power3.out" }, 4.30);
+      tl.fromTo(".d3-a2-m1", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.34, ease: "power3.out" }, 4.34);
+      tl.to(".d3-a2-c15", { opacity: 0.14, duration: 0.34, ease: "power3.out" }, 4.56);
+      tl.fromTo(".d3-a2-m2", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.34, ease: "power3.out" }, 4.60);
+      tl.to(".d3-a2-c14", { opacity: 0.14, duration: 0.34, ease: "power3.out" }, 4.82);
+      tl.fromTo(".d3-a2-m3", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.34, ease: "power3.out" }, 4.86);
+      tl.to(".d3-a2-c13", { opacity: 0.14, duration: 0.34, ease: "power3.out" }, 5.08);
+      tl.fromTo(".d3-a2-m4", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.34, ease: "power3.out" }, 5.12);
+
+      /* ---- scene 3 (5.55-8.05) — push in to 128 cells ---- */
+      tl.fromTo(".d3-act3", { scale: 0.88 }, { scale: 1.14, duration: 1.25, ease: "power3.out", transformOrigin: "50% 34%" }, 5.55);
+      tl.fromTo(".d3-a3-icon", { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, duration: 0.7, ease: "power3.out", transformOrigin: "50% 50%" }, 5.95);
+      tl.fromTo(".d3-a3-tag", { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" }, 6.15);
+      tl.fromTo(".d3-a3-num", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.72, ease: "power3.out" }, 6.30);
+      tl.fromTo(".d3-a3-unit", { opacity: 0 }, { opacity: 1, duration: 0.45, ease: "power3.out" }, 6.80);
+      tl.fromTo(".d3-fc", { opacity: 0, scale: 0.3 }, { opacity: 1, scale: 1, duration: 0.28, ease: "power3.out", stagger: 0.007, transformOrigin: "50% 50%" }, 6.85);
+      tl.fromTo(".d3-a3-chrome", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power3.out" }, 7.62);
+
+      /* ---- scene 4 (8.05-10.0) — one item per slot, held ---- */
+      tl.fromTo(".d3-a4-head", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.68, ease: "power3.out" }, 8.05);
+      tl.fromTo(".d3-a4-r1", { opacity: 0, scale: 0.55 }, { opacity: 1, scale: 1, duration: 0.34, ease: "power3.out", stagger: 0.028, transformOrigin: "50% 50%" }, 8.18);
+      tl.fromTo(".d3-a4-r2", { opacity: 0, scale: 0.55 }, { opacity: 1, scale: 1, duration: 0.34, ease: "power3.out", stagger: 0.028, transformOrigin: "50% 50%" }, 8.34);
+      tl.fromTo(".d3-a4-item", { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.42, ease: "power3.out", stagger: 0.08 }, 8.46);
+      tl.fromTo(".d3-a4-one", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power3.out", stagger: 0.06 }, 8.62);
+      tl.fromTo(".d3-a4-tag", { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.42, ease: "power3.out" }, 8.72);
+
+      window.__timelines["03-durability"] = tl;
+    })();
+  </script>
+</template>

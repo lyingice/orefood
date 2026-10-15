@@ -1,5 +1,6 @@
 package com.lyingice.orefood.data;
 
+import com.lyingice.orefood.OreFoodTable;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -49,6 +50,25 @@ public record PotionEffectSpec(MobEffect effect, int duration, int amplifier, fl
             Codec.INT.optionalFieldOf("amplifier", 0).forGetter(PotionEffectSpec::amplifier),
             Codec.floatRange(0.0F, 1.0F).optionalFieldOf("probability", 1.0F).forGetter(PotionEffectSpec::probability)
     ).apply(instance, PotionEffectSpec::new));
+
+    /**
+     * 把 {@link OreFoodTable} 里的负面效果描述转成本平台的记录。
+     *
+     * <p>效果 id 是我们自己表里写死的常量，解析不出来就是代码 bug——直接抛，
+     * 不要静默跳过（那个物品会少一条效果而没人发现）。
+     *
+     * @param debuff 纯数据的负面效果描述
+     * @return 可直接塞进 {@code OreFoodDefinition} 的记录
+     */
+    public static PotionEffectSpec of(OreFoodTable.Debuff debuff) {
+        ResourceLocation id = ResourceLocation.tryParse(debuff.effectId());
+        MobEffect effect = id == null ? null : BuiltInRegistries.MOB_EFFECT.get(id);
+        if (effect == null) {
+            throw new IllegalStateException("[orefood] OreFoodTable 里写了未知的状态效果 id："
+                    + debuff.effectId());
+        }
+        return new PotionEffectSpec(effect, debuff.duration(), debuff.amplifier(), debuff.probability());
+    }
 
     /** @return 可直接施加到生物身上的效果实例。 */
     public MobEffectInstance toInstance() {

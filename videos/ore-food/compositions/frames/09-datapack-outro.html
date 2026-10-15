@@ -1,0 +1,325 @@
+<template>
+  <style>
+    @font-face { font-family: "Newsreader"; src: url("assets/fonts/Newsreader_NotoSerifSC.ttf") format("truetype"); font-weight: 400; font-display: block; }
+    @font-face { font-family: "Hanken Grotesk"; src: url("assets/fonts/Hanken_Grotesk_NotoSansSC.ttf") format("truetype"); font-weight: 400 700; font-display: block; }
+    @font-face { font-family: "DM Mono"; src: url("assets/fonts/DM_Mono_Consolas.ttf") format("truetype"); font-weight: 400; font-display: block; }
+
+    #root {
+      position: absolute; inset: 0; width: 1920px; height: 1080px;
+      container-type: size; overflow: hidden;
+      font-family: "Hanken Grotesk", sans-serif; color: #1F2BE0;
+    }
+    .f9-px { image-rendering: pixelated; display: block; }
+
+    /* ---- permanent frame furniture ---- */
+    .f9-ground {
+      position: absolute; inset: 0; background-color: #F0EBDE;
+      background-image:
+        linear-gradient(to right, rgba(31,43,224,0.13) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(31,43,224,0.13) 1px, transparent 1px);
+      background-size: 2cqw 2cqw;
+    }
+    .f9-glitch {
+      position: absolute; top: 3.4cqw; bottom: 4.6cqw; right: 4cqw; width: 5.2cqw;
+      background-image: repeating-linear-gradient(to bottom, #1F2BE0 0 0.34cqw, transparent 0.34cqw 1.5cqw);
+    }
+    .f9-roof { position: absolute; left: 4cqw; right: 4cqw; top: 3.4cqw; border-top: 0.12cqw solid #1F2BE0; }
+    .f9-floor { position: absolute; left: 4cqw; right: 4cqw; bottom: 4.6cqw; border-top: 0.12cqw solid #1F2BE0; }
+    .f9-kicker {
+      position: absolute; left: 4.6cqw; top: 5.6cqw;
+      font-size: 15px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+    }
+    .f9-page {
+      position: absolute; right: 4.6cqw; bottom: 6cqw;
+      font-family: "DM Mono", monospace; font-size: 13px; letter-spacing: 0.06em;
+    }
+
+    /* ---- left column: the data pack ---- */
+    .f9-lab {
+      position: absolute; left: 4.6cqw; top: 8.6cqw;
+      font-size: 15px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+    }
+    .f9-labrule { position: absolute; left: 4.6cqw; width: 37.4cqw; top: 10.5cqw; border-top: 0.12cqw solid #1F2BE0; }
+    .f9-file { position: absolute; left: 4.6cqw; top: 11.8cqw; display: flex; align-items: center; gap: 0.8cqw; }
+    .f9-fileicon { width: 3.0cqw; height: auto; }
+    .f9-filepath { font-family: "DM Mono", monospace; font-size: 16px; letter-spacing: 0.04em; white-space: nowrap; }
+    .f9-code {
+      position: absolute; left: 4.6cqw; top: 15.9cqw; display: inline-block;
+      box-sizing: border-box; padding: 0.7cqw 1.0cqw;
+      border: 0.12cqw solid #1F2BE0; background: rgba(240,235,222,0.86);
+      font-family: "DM Mono", monospace; font-size: 24px; letter-spacing: 0.04em; white-space: nowrap;
+    }
+    .f9-valslot { position: relative; display: inline-block; width: 1.2cqw; height: 1.2cqw; vertical-align: -0.05cqw; }
+    .f9-val { position: absolute; inset: 0; border: 0.1cqw solid #1F2BE0; }
+    .f9-valfill { position: absolute; inset: 0; background: #1F2BE0; }
+    .f9-caret { display: inline-block; width: 0.15cqw; height: 1.5cqw; background: #1F2BE0; vertical-align: -0.28cqw; margin-left: 0.4cqw; }
+    .f9-effect {
+      position: absolute; left: 4.6cqw; top: 19.5cqw; display: flex; align-items: center; gap: 0.7cqw;
+      font-size: 14px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+    }
+    .f9-effmark { width: 0.7cqw; height: 0.7cqw; background: #1F2BE0; }
+    .f9-one {
+      position: absolute; left: 4.4cqw; top: 24.6cqw;
+      font-family: "Newsreader", serif; font-size: 6.4cqw; line-height: 0.96; letter-spacing: -0.015em;
+    }
+    .f9-onelabel { position: absolute; left: 4.9cqw; top: 32.6cqw; font-size: 15px; font-weight: 600; letter-spacing: 0.16em; }
+
+    .f9-orebeat { position: absolute; left: 4.6cqw; top: 33.2cqw; width: 34cqw; height: 9cqw; }
+    .f9-oreimg { position: absolute; left: 0; top: 0.6cqw; width: 5.4cqw; height: auto; }
+    .f9-oreplus { position: absolute; left: 6.6cqw; top: 2.2cqw; font-family: "DM Mono", monospace; font-size: 30px; }
+    .f9-orebeef { position: absolute; left: 9.2cqw; top: 0; width: 6.6cqw; height: auto; }
+    .f9-orelabel { position: absolute; left: 0; top: 7.4cqw; font-size: 14px; font-weight: 600; letter-spacing: 0.16em; }
+
+    /* ---- right column: the interface mod ---- */
+    .f9-guilab {
+      position: absolute; left: 45.5cqw; top: 8.6cqw;
+      font-size: 15px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+    }
+    .f9-guirule { position: absolute; left: 45.5cqw; width: 43.5cqw; top: 10.5cqw; border-top: 0.12cqw solid #1F2BE0; }
+
+    .f9-slot { position: absolute; top: 11.4cqw; width: 7.2cqw; height: 11cqw; }
+    .f9-slot-0 { left: 45.5cqw; }
+    .f9-slot-1 { left: 53.5cqw; }
+    .f9-slot-2 { left: 61.5cqw; }
+    .f9-slot-3 { left: 69.5cqw; }
+    .f9-slot-4 { left: 77.5cqw; }
+    .f9-slotbg { position: absolute; left: 0; top: 0; width: 7.2cqw; height: 7.2cqw; }
+    .f9-slotitem { position: absolute; left: 1.5cqw; top: 1.35cqw; width: 4.2cqw; height: 4.2cqw; object-fit: contain; }
+    .f9-slotname {
+      position: absolute; left: 0; top: 7.7cqw; width: 7.2cqw; text-align: center;
+      font-size: 13px; font-weight: 600; letter-spacing: 0.14em;
+    }
+
+    .f9-tip {
+      position: absolute; left: 45.5cqw; top: 21.6cqw; width: 40cqw; box-sizing: border-box;
+      padding: 1.1cqw 1.2cqw; border: 0.12cqw solid #1F2BE0; background: rgba(240,235,222,0.94);
+    }
+    .f9-tiphead { display: flex; align-items: center; gap: 0.8cqw; }
+    .f9-tipicon { width: 2.6cqw; height: auto; }
+    .f9-tiptitle { font-size: 13px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; }
+    .f9-tiprule { border-top: 0.06cqw solid rgba(31,43,224,0.35); margin: 0.9cqw 0 0.7cqw; }
+    .f9-tiprow {
+      display: grid; grid-template-columns: 2.0cqw 1fr 4.5cqw 5.0cqw; align-items: center;
+      column-gap: 0.8cqw; height: 2.5cqw;
+    }
+    .f9-tipbullet { width: 1.6cqw; height: auto; }
+    .f9-tipname { font-size: 17px; letter-spacing: 0.02em; }
+    .f9-tiproman { font-family: "DM Mono", monospace; font-size: 16px; letter-spacing: 0.05em; }
+    .f9-tiptime { font-family: "DM Mono", monospace; font-size: 16px; letter-spacing: 0.05em; text-align: right; }
+
+    /* ---- colophon: platforms, license, call to action ---- */
+    .f9-cols { position: absolute; left: 45.5cqw; top: 36.4cqw; width: 43.5cqw; height: 8cqw; }
+    .f9-col { position: absolute; top: 0; width: 13cqw; }
+    .f9-col-0 { left: 0; }
+    .f9-col-1 { left: 14.5cqw; }
+    .f9-col-2 { left: 29cqw; }
+    .f9-colnum { font-family: "DM Mono", monospace; font-size: 13px; letter-spacing: 0.06em; }
+    .f9-collab { margin-top: 0.6cqw; font-size: 14px; font-weight: 600; letter-spacing: 0.16em; }
+    .f9-colrule { position: absolute; left: 0; right: 0; top: 4.0cqw; border-top: 0.12cqw solid #1F2BE0; }
+    .f9-cta { position: absolute; left: 0; top: 4.9cqw; display: flex; gap: 2.6cqw; }
+    .f9-ctai { display: flex; align-items: center; gap: 0.6cqw; font-size: 15px; font-weight: 600; letter-spacing: 0.16em; }
+    .f9-ctamark { width: 0.7cqw; height: 0.7cqw; background: #1F2BE0; }
+
+    .f9-title {
+      position: absolute; left: 0; width: 100%; top: 29.6cqw; text-align: center;
+      font-family: "Newsreader", serif; font-size: 9.4cqw; line-height: 0.96; letter-spacing: -0.005em;
+    }
+  </style>
+
+  <div id="root" data-composition-id="09-datapack-outro" data-width="1920" data-height="1080">
+    <div class="clip f9-ground" data-start="0" data-duration="24.7" data-track-index="0"></div>
+    <div class="clip f9-glitch" data-start="0" data-duration="24.7" data-track-index="1"></div>
+    <div class="clip f9-roof" data-start="0" data-duration="24.7" data-track-index="2"></div>
+    <div class="clip f9-floor" data-start="0" data-duration="24.7" data-track-index="3"></div>
+    <div class="clip f9-kicker" data-start="0" data-duration="24.7" data-track-index="4">OreFood &nbsp;·&nbsp; 数据包</div>
+    <div class="clip f9-page" data-start="0" data-duration="24.7" data-track-index="5">09 / 09</div>
+
+    <div class="clip f9-lab" data-start="0.1" data-duration="24.6" data-track-index="6">Data pack</div>
+    <div class="clip f9-labrule" data-start="0.25" data-duration="24.45" data-track-index="7"></div>
+    <div class="clip f9-file" data-start="0.4" data-duration="24.3" data-track-index="8">
+      <img class="f9-px f9-fileicon" src="assets/px/enchanted_book.png" alt="" />
+      <span class="f9-filepath">data/ore_food/golden_beef.json</span>
+    </div>
+    <div class="clip f9-code" data-start="0.25" data-duration="24.45" data-track-index="9">
+      <span>{ "nutrition":</span>
+      <span class="f9-valslot"><span class="f9-val"></span><span class="f9-valfill"></span></span>
+      <span>}</span>
+      <span class="f9-caret"></span>
+    </div>
+    <div class="clip f9-effect" data-start="3.3" data-duration="21.4" data-track-index="10">
+      <span class="f9-effmark"></span><span>生效</span>
+    </div>
+    <div class="clip f9-one" data-start="2.35" data-duration="22.35" data-track-index="11">1</div>
+    <div class="clip f9-onelabel" data-start="2.75" data-duration="21.95" data-track-index="12">行 · 一处改动</div>
+
+    <div class="clip f9-orebeat" data-start="6.6" data-duration="18.1" data-track-index="13">
+      <img class="f9-px f9-oreimg" src="assets/px/redstone.png" alt="" />
+      <span class="f9-oreplus">+</span>
+      <img class="f9-px f9-orebeef" src="assets/px/netherite_beef.png" alt="" />
+      <span class="f9-orelabel">红石牛排</span>
+    </div>
+
+    <div class="clip f9-guilab" data-start="8.0" data-duration="16.7" data-track-index="14">GUI mod</div>
+    <div class="clip f9-guirule" data-start="8.25" data-duration="16.45" data-track-index="15"></div>
+
+    <div class="clip f9-slot f9-slot-0" data-start="8.55" data-duration="16.15" data-track-index="16">
+      <img class="f9-px f9-slotbg" src="assets/px/slot.png" alt="" />
+      <img class="f9-px f9-slotitem" src="assets/px/copper_beef.png" alt="" />
+      <span class="f9-slotname">铜</span>
+    </div>
+    <div class="clip f9-slot f9-slot-1" data-start="9.45" data-duration="15.25" data-track-index="17">
+      <img class="f9-px f9-slotbg" src="assets/px/slot.png" alt="" />
+      <img class="f9-px f9-slotitem" src="assets/px/iron_beef.png" alt="" />
+      <span class="f9-slotname">铁</span>
+    </div>
+    <div class="clip f9-slot f9-slot-2" data-start="9.8" data-duration="14.9" data-track-index="18">
+      <img class="f9-px f9-slotbg" src="assets/px/slot.png" alt="" />
+      <img class="f9-px f9-slotitem" src="assets/px/golden_beef.png" alt="" />
+      <span class="f9-slotname">金</span>
+    </div>
+    <div class="clip f9-slot f9-slot-3" data-start="10.15" data-duration="14.55" data-track-index="19">
+      <img class="f9-px f9-slotbg" src="assets/px/slot.png" alt="" />
+      <img class="f9-px f9-slotitem" src="assets/px/diamond_beef.png" alt="" />
+      <span class="f9-slotname">钻石</span>
+    </div>
+    <div class="clip f9-slot f9-slot-4" data-start="10.5" data-duration="14.2" data-track-index="20">
+      <img class="f9-px f9-slotbg" src="assets/px/slot.png" alt="" />
+      <img class="f9-px f9-slotitem" src="assets/px/netherite_beef.png" alt="" />
+      <span class="f9-slotname">下界合金</span>
+    </div>
+
+    <div class="clip f9-tip" data-start="11.45" data-duration="13.25" data-track-index="21">
+      <div class="f9-tiphead">
+        <img class="f9-px f9-tipicon" src="assets/px/potion.png" alt="" />
+        <span class="f9-tiptitle">Potion format</span>
+      </div>
+      <div class="f9-tiprule"></div>
+      <div class="f9-tiprow f9-tiprow-0">
+        <img class="f9-px f9-tipbullet" src="assets/px/slot.png" alt="" />
+        <span class="f9-tipname">力量</span>
+        <span class="f9-tiproman">II</span>
+        <span class="f9-tiptime">1:30</span>
+      </div>
+      <div class="f9-tiprow f9-tiprow-1">
+        <img class="f9-px f9-tipbullet" src="assets/px/slot.png" alt="" />
+        <span class="f9-tipname">迅捷</span>
+        <span class="f9-tiproman">II</span>
+        <span class="f9-tiptime">1:30</span>
+      </div>
+      <div class="f9-tiprow f9-tiprow-2">
+        <img class="f9-px f9-tipbullet" src="assets/px/slot.png" alt="" />
+        <span class="f9-tipname">生命恢复</span>
+        <span class="f9-tiproman">II</span>
+        <span class="f9-tiptime">0:22</span>
+      </div>
+    </div>
+
+    <div class="clip f9-cols" data-start="15.5" data-duration="9.2" data-track-index="22">
+      <div class="f9-col f9-col-0">
+        <div class="f9-colnum">001</div>
+        <div class="f9-collab">三平台</div>
+      </div>
+      <div class="f9-col f9-col-1">
+        <div class="f9-colnum">002</div>
+        <div class="f9-collab">开源协议</div>
+      </div>
+      <div class="f9-col f9-col-2">
+        <div class="f9-colnum">003</div>
+        <div class="f9-collab">自由分发</div>
+      </div>
+      <div class="f9-colrule"></div>
+      <div class="f9-cta" data-layout-allow-overlap>
+        <span class="f9-ctai f9-cta-0"><span class="f9-ctamark"></span>点赞</span>
+        <span class="f9-ctai f9-cta-1"><span class="f9-ctamark"></span>收藏</span>
+        <span class="f9-ctai f9-cta-2"><span class="f9-ctamark"></span>评论</span>
+      </div>
+    </div>
+
+    <div class="clip f9-title" data-start="23.0" data-duration="1.7" data-track-index="23">矿物牛排</div>
+  </div>
+
+  <script src="assets/vendor/gsap.min.js"></script>
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+
+      /* ---- frame furniture + data pack head, on screen inside the first half second ---- */
+      tl.fromTo(".f9-kicker", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0);
+      tl.fromTo(".f9-page", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power3.out" }, 0.1);
+      tl.fromTo(".f9-roof", { scaleX: 0, transformOrigin: "left center" }, { scaleX: 1, duration: 0.6, ease: "power3.out" }, 0.08);
+      tl.fromTo(".f9-floor", { scaleX: 0, transformOrigin: "right center" }, { scaleX: 1, duration: 0.6, ease: "power3.out" }, 0.16);
+      tl.fromTo(".f9-glitch", { opacity: 0 }, { opacity: 1, duration: 0.7, ease: "power3.out" }, 0.2);
+      tl.fromTo(".f9-lab", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0.1);
+      tl.fromTo(".f9-labrule", { scaleX: 0, transformOrigin: "left center" }, { scaleX: 1, duration: 0.55, ease: "power3.out" }, 0.22);
+      tl.fromTo(".f9-file", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" }, 0.34);
+      tl.fromTo(".f9-code", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0.22);
+
+      /* ---- Scene A (cue 2.39s "改一行") — the hero line count lands, the value is rewritten ---- */
+      tl.fromTo(".f9-one", { opacity: 0, y: 66 }, { opacity: 1, y: 0, duration: 0.75, ease: "power3.out" }, 2.35);
+      tl.fromTo(".f9-caret", { opacity: 0, x: -10 }, { opacity: 1, x: 0, duration: 0.32, ease: "power3.out" }, 2.5);
+      tl.fromTo(".f9-valfill", { scaleX: 0, transformOrigin: "left center" }, { scaleX: 1, duration: 0.55, ease: "power3.out" }, 2.62);
+      tl.fromTo(".f9-onelabel", { opacity: 0, x: -16 }, { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" }, 2.8);
+      /* ---- cue 3.27s "重进世界就生效" — the edited line takes effect ---- */
+      tl.fromTo(".f9-effect", { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" }, 3.3);
+
+      /* ---- Scene B (cue 6.8s "红石牛排") — you can add one of your own ---- */
+      tl.fromTo(".f9-oreimg", { opacity: 0, x: -26 }, { opacity: 1, x: 0, duration: 0.55, ease: "power3.out" }, 6.6);
+      tl.fromTo(".f9-oreplus", { opacity: 0, scale: 0.4, transformOrigin: "50% 50%" }, { opacity: 1, scale: 1, duration: 0.4, ease: "power3.out" }, 7.0);
+      tl.fromTo(".f9-orebeef", { opacity: 0, scale: 0.55, transformOrigin: "50% 50%" }, { opacity: 1, scale: 1, duration: 0.55, ease: "power3.out" }, 7.15);
+      tl.fromTo(".f9-orelabel", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 7.7);
+
+      /* ---- Scene C (cue 8.02s / 9.46s) — the interface mod keeps all five in separate slots ---- */
+      tl.fromTo(".f9-guilab", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 8.0);
+      tl.fromTo(".f9-guirule", { scaleX: 0, transformOrigin: "left center" }, { scaleX: 1, duration: 0.55, ease: "power3.out" }, 8.25);
+      var slotCue = [8.6, 9.5, 9.85, 10.2, 10.55];
+      ["0", "1", "2", "3", "4"].forEach(function (n, i) {
+        tl.fromTo(".f9-slot-" + n, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, slotCue[i]);
+      });
+
+      /* ---- Scene D (cue 11.48s / 13.76s) — the hover tooltip in vanilla potion format ---- */
+      tl.fromTo(".f9-tip", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 11.45);
+      tl.fromTo(".f9-tiphead", { opacity: 0, x: -16 }, { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" }, 11.8);
+      tl.fromTo(".f9-tiprule", { scaleX: 0, transformOrigin: "left center" }, { scaleX: 1, duration: 0.5, ease: "power3.out" }, 12.05);
+      var rowCue = [13.75, 14.15, 14.55];
+      ["0", "1", "2"].forEach(function (n, i) {
+        tl.fromTo(".f9-tiprow-" + n, { opacity: 0, x: -18 }, { opacity: 1, x: 0, duration: 0.55, ease: "power3.out" }, rowCue[i]);
+      });
+
+      /* ---- Scene E (cue 15.54s / 16.99s / 18.05s) — three platforms, open license, free redistribution ---- */
+      var colCue = [15.5, 17.0, 18.1];
+      ["0", "1", "2"].forEach(function (n, i) {
+        tl.fromTo(".f9-col-" + n, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, colCue[i]);
+      });
+      tl.fromTo(".f9-colrule", { scaleX: 0, transformOrigin: "left center" }, { scaleX: 1, duration: 0.6, ease: "power3.out" }, 19.4);
+
+      /* ---- Scene F (cue 19.65s / 20.71s / 22.15s) — the call to action, one chip per beat ---- */
+      tl.fromTo(".f9-cta-0", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 19.6);
+      tl.fromTo(".f9-cta-1", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 20.75);
+      tl.fromTo(".f9-cta-2", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 21.6);
+
+      /* ---- Scene G (22.6s) — clean close: the working detail clears, the five sprites settle, the title lands ---- */
+      var clear = [".f9-lab", ".f9-labrule", ".f9-file", ".f9-code", ".f9-effect", ".f9-one", ".f9-onelabel",
+                   ".f9-orebeat", ".f9-guilab", ".f9-guirule", ".f9-tip", ".f9-tiprow-0", ".f9-tiprow-1", ".f9-tiprow-2",
+                   ".f9-col-0", ".f9-col-1", ".f9-col-2", ".f9-colrule", ".f9-cta"];
+      tl.to(clear, { opacity: 0, duration: 0.55, ease: "power3.out" }, 22.55);
+
+      var settle = [{ x: -340, y: 108 }, { x: -315, y: 108 }, { x: -290, y: 108 }, { x: -265, y: 108 }, { x: -240, y: 108 }];
+      ["0", "1", "2", "3", "4"].forEach(function (n, i) {
+        tl.fromTo(".f9-slot-" + n, { x: 0, y: 0 }, { x: settle[i].x, y: settle[i].y, duration: 1.0, ease: "power3.out", immediateRender: false }, 22.6);
+      });
+
+      tl.fromTo(".f9-title", { opacity: 0, y: 48 }, { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }, 23.4);
+      tl.to(".f9-cta", { opacity: 0, duration: 0.5, ease: "power3.out" }, 22.55);
+
+      /* held read 23.85-24.2, then the deliberate blank half second */
+      tl.to([".f9-kicker", ".f9-page", ".f9-glitch", ".f9-slot-0", ".f9-slot-1", ".f9-slot-2", ".f9-slot-3", ".f9-slot-4", ".f9-title"],
+        { opacity: 0, duration: 0.35, ease: "power3.out" }, 24.2);
+
+      /* the glitch column drifts the whole shot — alive without any exit */
+      tl.fromTo(".f9-glitch", { backgroundPositionY: "0px" }, { backgroundPositionY: "-1.5cqw", duration: 23.7, ease: "none" }, 0.5);
+
+      window.__timelines["09-datapack-outro"] = tl;
+    })();
+  </script>
+</template>
