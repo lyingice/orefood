@@ -27,8 +27,10 @@ import net.minecraft.world.item.Item;
  *
  * <p><b>两条硬约束</b>（都在本类里强制，脚本改不动）：
  * <ul>
- *   <li><b>食物属性零值</b>：真实数值由 {@code OreFoodConsume} 在吃下时按定义加。
- *       如果这里跟着脚本写的食物属性走，营养就会翻倍；</li>
+ *   <li><b>食物属性以定义为准</b>（覆盖脚本 {@code .food(...)}），真实数值注册进
+ *       {@code FoodProperties}；饱腹附魔加成由食用结算补
+ *       （见 {@code OreFoodConsume}）。这样 AppleSkin、精妙背包等读取
+ *       {@code getFoodProperties()} 的模组能看到正确数值，又不会与脚本值叠加；</li>
  *   <li><b>不可堆叠 + 可损坏</b>：带耐久的物品堆叠会让整堆共享一份耐久，
  *       而 {@code durability(1)} 只是让物品被判定为「可损坏」（真实上限由定义给出）。</li>
  * </ul>
@@ -54,29 +56,42 @@ public class OreFoodItemBuilder extends ItemBuilder {
 
     @Override
     public Item createObject() {
-        return new OreFoodItem(createItemProperties(), parseDefinition());
+        OreFoodDefinition definition = parseDefinition();
+        return new OreFoodItem(createItemProperties().food(foodProperties(definition)), definition);
     }
 
     /**
-     * 强制零值食物、不可堆叠、可损坏；脚本里写的 {.food(...)} / {.maxStackSize(...)}
-     * 会被这里覆盖——见类注释的两条硬约束。
+     * 强制不可堆叠、可损坏；脚本里写的 {@code .maxStackSize(...)} 会被这里覆盖，
+     * 脚本 {@code .food(...)} 则在 {@link #createObject()} 里被定义值覆盖——
+     * 见类注释的两条硬约束。
      */
     @Override
     public Item.Properties createItemProperties() {
         return super.createItemProperties()
                 .stacksTo(1)
-                .durability(1)
-                .food(new FoodProperties.Builder()
-                        .nutrition(0)
-                        .saturationMod(0.0F)
-                        .alwaysEat()
-                        .build());
+                .durability(1);
+    }
+
+    /**
+     * 按定义生成真实食物属性（覆盖脚本 {@code .food(...)} 的值）。
+     *
+     * <p>饱和度以原版系数表示：{@code saturation = nutrition × saturationModifier × 2}，
+     * 所以系数写作 {@code S / (2N)}；{@code nutrition} 为 0 时系数也给 0，避免除零。
+     */
+    private static FoodProperties foodProperties(OreFoodDefinition definition) {
+        int nutrition = definition.nutrition();
+        float saturationModifier = nutrition > 0 ? definition.saturation() / (nutrition * 2.0F) : 0.0F;
+        return new FoodProperties.Builder()
+                .nutrition(nutrition)
+                .saturationMod(saturationModifier)
+                .alwaysEat()
+                .build();
     }
 
     /** @return 解析后的定义；脚本没写 .definition(...) 时给一份零值定义。 */
     private OreFoodDefinition parseDefinition() {
         if (this.definitionJson == null || this.definitionJson.isJsonNull()) {
-            return new OreFoodDefinition(0, 0.0F, 0, 0, List.of());
+            return new OreFoodDefinition(0, 0.0F, 0, 0, List.of(), "", false);
         }
         return OreFoodDefinition.CODEC.parse(JsonOps.INSTANCE, this.definitionJson)
                 .result()

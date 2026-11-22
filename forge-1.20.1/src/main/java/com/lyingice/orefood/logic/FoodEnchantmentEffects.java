@@ -7,17 +7,18 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 
 /**
- * 「五个食物附魔分别会施加哪些状态效果」——纯计算，不碰世界（Forge 1.20.1）。
+ * 「五个食物附魔分别会施加哪些状态效果」——<b>硬编码</b>（Forge 1.20.1）。
  *
- * <p>这个类被两处共用，从而保证<b>提示框显示的</b>与实际吃下去生效的完全一致：
+ * <p>1.20.1 的附魔本身就是代码注册的，也没有 1.21 那套附魔效果组件，
+ * 所以这里同样直接写死，不引入数据包——与那个版本的附魔体系保持一致。
+ * <b>只有 1.21.1 / 26.1.2 是数据包驱动</b>（各自注册附魔效果组件）。
+ *
+ * <p>数值全部来自共享层 {@link FoodEnchantmentRules}，与另外两个平台一致。
+ * 本类被两处共用，从而保证<b>提示框显示的</b>与实际吃下去生效的完全一致：
  * <ul>
  *   <li>{@link OreFoodConsume}：真正把效果加到生物身上；</li>
  *   <li>{@code OreFoodTooltip}：把同样的效果渲染成原版药水那样的提示行。</li>
  * </ul>
- *
- * <p>与 1.21.1 侧的同类文件逐行对照即可看出：除了 {@code MobEffect} 的类型
- * （1.20.1 是裸对象、1.21.1 是 {@code Holder}）之外，数值完全一样——
- * 数值本身来自共享层 {@link FoodEnchantmentRules}。
  */
 public final class FoodEnchantmentEffects {
 
@@ -40,17 +41,20 @@ public final class FoodEnchantmentEffects {
             effects.add(new MobEffectInstance(MobEffects.HEAL, 1, amplifier));
             effects.add(new MobEffectInstance(
                     MobEffects.REGENERATION,
-                    FoodEnchantmentRules.regenerationDuration(recoveryLevel), amplifier));
+                    FoodEnchantmentRules.regenerationDuration(recoveryLevel),
+                    amplifier));
         }
 
         if (adrenalineLevel > 0) {
             int amplifier = FoodEnchantmentRules.potionAmplifier(adrenalineLevel);
             effects.add(new MobEffectInstance(
                     MobEffects.DAMAGE_BOOST,
-                    FoodEnchantmentRules.strengthDuration(adrenalineLevel), amplifier));
+                    FoodEnchantmentRules.strengthDuration(adrenalineLevel),
+                    amplifier));
             effects.add(new MobEffectInstance(
                     MobEffects.MOVEMENT_SPEED,
-                    FoodEnchantmentRules.speedDuration(adrenalineLevel), amplifier));
+                    FoodEnchantmentRules.speedDuration(adrenalineLevel),
+                    amplifier));
         }
 
         if (fitnessLevel > 0) {
@@ -64,13 +68,12 @@ public final class FoodEnchantmentEffects {
         }
 
         if (feastLevel > 0) {
+            // 饱和效果固定 0 级，只随等级延长时长。
             effects.add(new MobEffectInstance(
-                    MobEffects.SATURATION,
-                    FoodEnchantmentRules.feastDuration(feastLevel),
-                    FoodEnchantmentRules.potionAmplifier(feastLevel)));
+                    MobEffects.SATURATION, FoodEnchantmentRules.feastDuration(feastLevel), 0));
         }
 
-        return effects;
+        return List.copyOf(effects);
     }
 
     private FoodEnchantmentEffects() {

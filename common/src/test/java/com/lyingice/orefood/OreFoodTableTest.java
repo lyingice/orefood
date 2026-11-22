@@ -4,6 +4,7 @@ import com.lyingice.orefood.OreFoodTable.Debuff;
 import com.lyingice.orefood.OreFoodTable.FoodBase;
 import com.lyingice.orefood.OreFoodTable.ItemKey;
 import com.lyingice.orefood.OreFoodTable.MineralTier;
+import com.lyingice.orefood.OreFoodTable.TabInsertion;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -22,11 +23,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>放在 {@code common/src/test/java}，三个平台模块各自编译并运行——一份断言生效三次。
  *
- * <p><b>最重要的两组断言</b>：
+ * <p><b>最重要的三组断言</b>：
  * <ul>
  *   <li>1.x 时代就存在的五个牛排，数值必须<b>一个比特都不变</b>（改成公式推导之后
  *       最容易悄悄漂移的就是它们）；</li>
- *   <li>负面效果只延长时长、不动效果等级（2.0 的明确设计）。</li>
+ *   <li>负面效果：只有河豚/腐肉有，时长随等级放大，<b>只有下界合金把 I 级提到 II 级</b>；</li>
+ *   <li>创造栏计划：每种原版食物后面紧跟它的五个矿物版本。</li>
  * </ul>
  */
 class OreFoodTableTest {
@@ -93,7 +95,7 @@ class OreFoodTableTest {
     }
 
     @Test
-    @DisplayName("负面效果：只有河豚与腐肉有，且只延长时长不动等级")
+    @DisplayName("负面效果：只有河豚与腐肉有；时长随等级放大，只有下界合金把 I 级提到 II 级")
     void debuffsFollowDesign() {
         for (ItemKey key : OreFoodTable.all()) {
             boolean expected = key.base() == FoodBase.PUFFERFISH || key.base() == FoodBase.ROTTEN_FLESH;
@@ -101,7 +103,7 @@ class OreFoodTableTest {
                     key.id() + " 的负面效果有无不对");
         }
 
-        // 铁级 = 原版强度。
+        // 铁级 = 原版强度：河豚是中毒 II / 饥饿 III / 反胃 I（amplifier 1 / 2 / 0）。
         List<Debuff> iron = OreFoodTable.debuffs(MineralTier.IRON, FoodBase.PUFFERFISH);
         assertEquals(3, iron.size());
         assertEquals("minecraft:poison", iron.get(0).effectId());
@@ -109,21 +111,62 @@ class OreFoodTableTest {
         assertEquals(1, iron.get(0).amplifier());
         assertEquals(1.0F, iron.get(0).probability(), 0.0F);
 
-        // 腐蚀：饥饿 600t、80% 概率、0 级。
-        List<Debuff> rotten = OreFoodTable.debuffs(MineralTier.IRON, FoodBase.ROTTEN_FLESH);
-        assertEquals(1, rotten.size());
-        assertEquals(600, rotten.get(0).duration());
-        assertEquals(0.8F, rotten.get(0).probability(), 0.0F);
+        // 铜：时长 ×0.5，等级一律不动。
+        List<Debuff> copper = OreFoodTable.debuffs(MineralTier.COPPER, FoodBase.PUFFERFISH);
+        assertEquals(600, copper.get(0).duration());
+        assertEquals(1, copper.get(0).amplifier());
+        assertEquals(150, copper.get(2).duration());
+        assertEquals(0, copper.get(2).amplifier());
 
-        // 下界合金：时长 ×2.5，等级与概率不变。
+        // 下界合金：时长 ×2.5；只有「本来就是 I 级」的反胃升到 II 级。
         List<Debuff> netherite = OreFoodTable.debuffs(MineralTier.NETHERITE, FoodBase.PUFFERFISH);
         assertEquals(3000, netherite.get(0).duration());
-        assertEquals(1, netherite.get(0).amplifier(), "下界合金不应该提升效果等级");
+        assertEquals(1, netherite.get(0).amplifier(), "中毒已经是 II 级，不该再叠加");
         assertEquals(750, netherite.get(1).duration());
-        assertEquals(2, netherite.get(1).amplifier(), "下界合金不应该提升效果等级");
+        assertEquals(2, netherite.get(1).amplifier(), "饥饿已经是 III 级，不该再叠加");
+        assertEquals(750, netherite.get(2).duration());
+        assertEquals(1, netherite.get(2).amplifier(), "反胃是 I 级，下界合金应该升到 II 级");
 
-        // 铜：时长 ×0.5。
-        assertEquals(600, OreFoodTable.debuffs(MineralTier.COPPER, FoodBase.PUFFERFISH).get(0).duration());
+        // 腐肉：饥饿 I → 下界合金 II；概率与时长照旧。
+        List<Debuff> rottenIron = OreFoodTable.debuffs(MineralTier.IRON, FoodBase.ROTTEN_FLESH);
+        assertEquals(600, rottenIron.get(0).duration());
+        assertEquals(0, rottenIron.get(0).amplifier());
+        assertEquals(0.8F, rottenIron.get(0).probability(), 0.0F);
+        List<Debuff> rottenNetherite = OreFoodTable.debuffs(MineralTier.NETHERITE, FoodBase.ROTTEN_FLESH);
+        assertEquals(1500, rottenNetherite.get(0).duration());
+        assertEquals(1, rottenNetherite.get(0).amplifier(), "腐肉饥饿 I 级，下界合金应该升到 II 级");
+        assertEquals(0.8F, rottenNetherite.get(0).probability(), 0.0F);
+    }
+
+    @Test
+    @DisplayName("创造栏计划：每种原版食物后面紧跟它的五个矿物版本")
+    void creativeTabPlanIsOrdered() {
+        List<TabInsertion> plan = OreFoodTable.creativeTabPlan();
+        assertEquals(FoodBase.values().length, plan.size());
+
+        assertEquals("minecraft:cooked_beef", plan.get(0).anchorItemId());
+        assertEquals(List.of(
+                "orefood:copper_beef",
+                "orefood:iron_beef",
+                "orefood:golden_beef",
+                "orefood:diamond_beef",
+                "orefood:netherite_beef"),
+                plan.get(0).itemIds());
+
+        assertEquals("minecraft:bread", plan.get(1).anchorItemId());
+        assertEquals("orefood:copper_bread", plan.get(1).itemIds().get(0));
+
+        // 每组 5 个、合起来正好覆盖全部 50 个物品且不重复；锚点就是合成用的原版食物。
+        Set<String> ids = new HashSet<>();
+        for (int i = 0; i < plan.size(); i++) {
+            TabInsertion insertion = plan.get(i);
+            assertEquals(MineralTier.values().length, insertion.itemIds().size());
+            assertEquals(FoodBase.values()[i].baseItemId(), insertion.anchorItemId());
+            for (String id : insertion.itemIds()) {
+                assertTrue(ids.add(id), "重复的创造栏条目：" + id);
+            }
+        }
+        assertEquals(50, ids.size());
     }
 
     @Test

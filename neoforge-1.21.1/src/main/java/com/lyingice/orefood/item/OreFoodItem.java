@@ -1,6 +1,8 @@
 package com.lyingice.orefood.item;
 
 import com.lyingice.orefood.data.OreFoodDefinition;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
@@ -61,5 +63,26 @@ public class OreFoodItem extends Item {
     @Override
     public int getEnchantmentValue(ItemStack stack) {
         return this.definition.enchantmentValue();
+    }
+
+    /**
+     * 铁砧里用对应矿物材料修复（钻石牛排用钻石修，下界合金牛排用下界合金锭）。
+     *
+     * <p>1.21.1 的修复仍靠覆写这个方法（{@code minecraft:repairable} 组件是 26.x 才有的）；
+     * 材料 id 来自 {@code MineralTier#repairItemId()}，与合成配方用的是同一份数据。
+     *
+     * @param stack           被修复的食物
+     * @param repairCandidate 铁砧第二个槽里的材料
+     * @return 材料是否与这个食物同等级
+     */
+    @Override
+    public boolean isValidRepairItem(ItemStack stack, ItemStack repairCandidate) {
+        if (this.definition.infiniteDurability()) {
+            // 无限耐久的食物根本不会掉耐久，没有可修的东西。
+            return false;
+        }
+        ResourceLocation materialId = ResourceLocation.tryParse(this.definition.repairItemId());
+        Item material = materialId == null ? null : BuiltInRegistries.ITEM.get(materialId);
+        return material != null && repairCandidate.is(material);
     }
 }

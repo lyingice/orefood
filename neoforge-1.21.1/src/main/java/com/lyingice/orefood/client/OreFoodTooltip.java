@@ -44,8 +44,9 @@ public final class OreFoodTooltip {
 
         FoodEnchantmentLevels levels = FoodEnchantmentLevels.of(stack, event.getContext().registries());
 
-        List<MobEffectInstance> effects = new ArrayList<>(FoodEnchantmentEffects.effectsFor(
-                levels.recovery(), levels.adrenaline(), levels.fitness(), levels.feast()));
+        List<MobEffectInstance> effects = new ArrayList<>();
+        FoodEnchantmentEffects.effectsFor(stack)
+                .forEach(effect -> effects.add(effect.instance()));
         // 数据包声明在牛排上的药水效果同样预览，保持「所见即所得」。
         definition.effects().forEach(spec -> effects.add(spec.toInstance()));
 

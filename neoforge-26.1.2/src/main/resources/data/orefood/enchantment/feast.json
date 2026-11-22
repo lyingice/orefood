@@ -17,5 +17,20 @@
   "anvil_cost": 4,
   "slots": [
     "any"
-  ]
+  ],
+  "effects": {
+    "orefood:food_effects": [
+      {
+        "effect": "minecraft:saturation",
+        "duration": {
+          "base": 0,
+          "per_level": 1200
+        },
+        "amplifier": {
+          "base": 0,
+          "per_level": 0
+        }
+      }
+    ]
+  }
 }

@@ -20,6 +20,11 @@ base {
 
 repositories {
     mavenLocal()
+    // AppleSkin / Enchantment Descriptions / Balm 的发布仓库。
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+    }
     // KubeJS 及其传递依赖（rhino / architectury 等）的仓库。
     maven {
         name = 'Latvian'
@@ -130,7 +135,24 @@ dependencies {
     // 没装 KubeJS 时 kubejs.plugins.txt 不会被读取，那两个类也就不会被加载。
     // 带传递依赖是必要的：KubeJS 的若干接口引用了 rhino / architectury 的类型，
     // javac 解析这些父接口时需要它们在场。
+// dev 环境想真实测联动时用：让这几个模组在 runClient / runServer 里真的加载。
+    // runtimeOnly 既不进 jar，也不构成对玩家的硬依赖——玩家装了才会生效。
+    runtimeOnly "maven.modrinth:appleskin:${appleskin_version}"
+    runtimeOnly "maven.modrinth:enchantment-descriptions:${enchantment_descriptions_version}"
+    runtimeOnly "maven.modrinth:balm:${balm_version}"
+    runtimeOnly "maven.modrinth:bookshelf-lib:${bookshelf_version}"
+    runtimeOnly "maven.modrinth:prickle:${prickle_version}"
     compileOnly "dev.latvian.mods:kubejs-neoforge:${kubejs_version}"
+
+    // AppleSkin：编译期引用它的事件 API（squeek.appleskin.api.event.FoodValuesEvent）；
+    // 运行时用 ModList 判断是否安装，未安装时相关类不会被加载
+    // （见 client/OreFoodAppleSkinIntegration）。
+    compileOnly "maven.modrinth:appleskin:${appleskin_version}"
+    // Enchantment Descriptions：本模组只使用它约定的语言键
+    // enchantment.<ns>.<path>.desc，不引用任何 API；连同前置 Balm 一起列为依赖，
+    // 仅为把对应版本记录在案。
+    compileOnly "maven.modrinth:enchantment-descriptions:${enchantment_descriptions_version}"
+    compileOnly "maven.modrinth:balm:${balm_version}"
 
     testImplementation platform('org.junit:junit-bom:5.13.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'

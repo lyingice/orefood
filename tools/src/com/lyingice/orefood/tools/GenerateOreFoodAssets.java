@@ -45,8 +45,13 @@ public final class GenerateOreFoodAssets {
     private record MineralInfo(String cn, String en, String material) {
     }
 
-    /** 食物基底 的资源侧信息。 */
-    private record FoodInfo(String cn, String en, String baseItem) {
+    /**
+     * 食物基底的资源侧信息。
+     *
+     * <p>合成用的原版物品不在这里——那是 {@link OreFoodTable.FoodBase#baseItemId()}，
+     * 免得两处清单走样。
+     */
+    private record FoodInfo(String cn, String en) {
     }
 
     /** 必须覆盖 {@link OreFoodTable.MineralTier} 的每一个值。 */
@@ -59,16 +64,16 @@ public final class GenerateOreFoodAssets {
 
     /** 必须覆盖 {@link OreFoodTable.FoodBase} 的每一个值。 */
     private static final Map<String, FoodInfo> FOODS = Map.ofEntries(
-            Map.entry("beef", new FoodInfo("牛排", "Beef", "minecraft:cooked_beef")),
-            Map.entry("bread", new FoodInfo("面包", "Bread", "minecraft:bread")),
-            Map.entry("chicken", new FoodInfo("鸡肉", "Chicken", "minecraft:cooked_chicken")),
-            Map.entry("cod", new FoodInfo("鳕鱼", "Cod", "minecraft:cooked_cod")),
-            Map.entry("mutton", new FoodInfo("羊肉", "Mutton", "minecraft:cooked_mutton")),
-            Map.entry("porkchop", new FoodInfo("猪排", "Porkchop", "minecraft:cooked_porkchop")),
-            Map.entry("pufferfish", new FoodInfo("河豚", "Pufferfish", "minecraft:pufferfish")),
-            Map.entry("rabbit", new FoodInfo("兔肉", "Rabbit", "minecraft:cooked_rabbit")),
-            Map.entry("rotten_flesh", new FoodInfo("腐肉", "Rotten Flesh", "minecraft:rotten_flesh")),
-            Map.entry("salmon", new FoodInfo("鲑鱼", "Salmon", "minecraft:cooked_salmon")));
+            Map.entry("beef", new FoodInfo("牛排", "Beef")),
+            Map.entry("bread", new FoodInfo("面包", "Bread")),
+            Map.entry("chicken", new FoodInfo("鸡肉", "Chicken")),
+            Map.entry("cod", new FoodInfo("鳕鱼", "Cod")),
+            Map.entry("mutton", new FoodInfo("羊肉", "Mutton")),
+            Map.entry("porkchop", new FoodInfo("猪排", "Porkchop")),
+            Map.entry("pufferfish", new FoodInfo("河豚", "Pufferfish")),
+            Map.entry("rabbit", new FoodInfo("兔肉", "Rabbit")),
+            Map.entry("rotten_flesh", new FoodInfo("腐肉", "Rotten Flesh")),
+            Map.entry("salmon", new FoodInfo("鲑鱼", "Salmon")));
 
     private static final String MOD_ID = "orefood";
 
@@ -177,7 +182,7 @@ public final class GenerateOreFoodAssets {
     /** 该等级的「中间那一格」：铜放原版食物、其余放上一级同类食物。 */
     private static String middleItem(String id, OreFoodTable.ItemKey key, FoodInfo foodInfo) {
         return switch (key.tier().key()) {
-            case "copper" -> foodInfo.baseItem();
+            case "copper" -> key.base().baseItemId();
             case "iron" -> MOD_ID + ":copper_" + key.base().key();
             case "golden" -> MOD_ID + ":iron_" + key.base().key();
             case "diamond" -> MOD_ID + ":golden_" + key.base().key();

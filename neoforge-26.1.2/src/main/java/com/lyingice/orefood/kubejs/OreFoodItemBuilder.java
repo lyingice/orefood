@@ -32,8 +32,9 @@ import net.minecraft.world.item.enchantment.Enchantable;
  *   <li>{@code ENCHANTABLE} 组件 —— 26.1.2 的附魔能力走组件，且构造器要求正数。</li>
  * </ul>
  *
- * <p><b>两条硬约束</b>（都在本类里强制，脚本改不动）：食物属性零值（真实数值由
- * {@code OreFoodConsume} 按定义加，跟着脚本走会翻倍）、不可堆叠 + 可损坏。
+ * <p><b>两条硬约束</b>（都在本类里强制，脚本改不动）：食物属性<b>以定义为准</b>
+ * （父类先应用脚本的 {@code .food(...)}，随后本类用定义值覆盖，真实数值注册进
+ * {@code FoodProperties}；「饱腹」附魔加成由食用结算补）、不可堆叠 + 可损坏。
  *
  * <p>NeoForge 平台还要提醒作者：本模组的附魔只对 {@code #c:foods} 里的物品生效，
  * 脚本里记得写 {@code .tag('c:foods')}。
@@ -63,6 +64,9 @@ public class OreFoodItemBuilder extends ItemBuilder {
         Item.Properties props = createItemProperties()
                 .stacksTo(1)
                 .durability(1)
+                // 用定义值覆盖 super.createItemProperties() 里脚本的 .food(...)，
+                // 防止「脚本值 + 定义值」叠加；26.1.2 的 record 第二参是绝对饱和度。
+                .food(new FoodProperties(definition.nutrition(), definition.saturation(), true))
                 // 26.1.2 的物品模型按 ITEM_MODEL 组件走：指向 assets/<ns>/items/<路径>.json。
                 .component(DataComponents.ITEM_MODEL, this.id);
         if (definition.enchantmentValue() > 0) {
@@ -73,21 +77,19 @@ public class OreFoodItemBuilder extends ItemBuilder {
         return new OreFoodItem(props, definition);
     }
 
-    /** 强制零值食物、不可堆叠、可损坏；见类注释的两条硬约束。 */
+    /**
+     * 只保留父类逻辑（含脚本的 {@code .food(...)}）；食物属性稍后在
+     * {@link #createObject()} 里用定义值覆盖，不可堆叠与可损坏也在那里设置。
+     */
     @Override
     public Item.Properties createItemProperties() {
-        return super.createItemProperties()
-                .food(new FoodProperties.Builder()
-                        .nutrition(0)
-                        .saturationModifier(0.0F)
-                        .alwaysEdible()
-                        .build());
+        return super.createItemProperties();
     }
 
     /** @return 解析后的定义；脚本没写 .definition(...) 时给一份零值定义。 */
     private OreFoodDefinition parseDefinition() {
         if (this.definitionJson == null || this.definitionJson.isJsonNull()) {
-            return new OreFoodDefinition(0, 0.0F, 0, 0, List.of());
+            return new OreFoodDefinition(0, 0.0F, 0, 0, List.of(), "", false);
         }
         return OreFoodDefinition.CODEC.parse(JsonOps.INSTANCE, this.definitionJson)
                 .result()

@@ -8,15 +8,15 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 
 /**
  * 「吃下矿物牛排时到底发生了什么」——三件事都在这里（NeoForge 26.1.2）。
  *
  * <ol>
- *   <li><b>按定义加营养</b>：物品注册时的食物属性是零值（见 {@code OreFoodItems}），
- *       真正的饱食度/饱和度在这里按定义补上，并叠加「饱腹」附魔的额外饱食度；</li>
+ *   <li><b>叠加「饱腹」附魔加成</b>：物品注册时已按定义写入真实食物属性，
+ *       基础饱食度/饱和度由原版 {@code FoodProperties#onConsume}（{@code ConsumableListener}）
+ *       结算；这里只在基础值之后补上「饱腹」附魔的额外饱食度；</li>
  *   <li><b>施加定义自带的药水效果</b>：来自数据包条目的 {@code effects} 字段；</li>
  *   <li><b>施加食物附魔效果</b>：委托给 {@link FoodEnchantmentEffects}。</li>
  * </ol>
@@ -31,8 +31,9 @@ import net.minecraft.world.item.ItemStack;
  *          └─ stack.consume(1, user)                                     ← 消耗点 → 改成扣耐久
  * </pre>
  * 所以本模组的 Mixin 也换了目标（{@code ConsumableMixin}）。
- * 饱食度这边仍然是「原版先加 0、我们再补」的路子：
- * {@code FoodProperties#onConsume} 只会把注册时那个零值加进去。
+ * 基础营养由注册时写入的真实 {@code FoodProperties} 经原版 listener 结算；
+ * 本模组的注入点在 {@code stack.consume} 之前（基础值之后），这里只负责叠加
+ * 「饱腹」附魔加成。
  */
 public final class OreFoodConsume {
 
@@ -54,35 +55,37 @@ public final class OreFoodConsume {
 
         FoodEnchantmentLevels levels = FoodEnchantmentLevels.of(stack, entity.level().registryAccess());
 
-        applySatiety(entity, definition, levels);
+        applySatiety(entity, levels);
         applyDefinitionEffects(entity, definition);
-        for (MobEffectInstance effect : FoodEnchantmentEffects.effectsFor(
-                levels.recovery(), levels.adrenaline(), levels.fitness(), levels.feast())) {
-            entity.addEffect(effect);
+        // 附魔效果来自数据包（附魔 JSON 里的 orefood:food_effects），这里只负责施加。
+        for (FoodEnchantmentEffects.Resolved effect : FoodEnchantmentEffects.effectsFor(stack)) {
+            if (effect.roll(entity.getRandom())) {
+                entity.addEffect(effect.instance());
+            }
         }
     }
 
     /**
-     * 按定义补上饱食度与饱和度，并叠加「饱腹」附魔。
+     * 叠加「饱腹」附魔的额外饱食度与饱和度。
      *
-     * <p>26.1.2 的 {@code FoodProperties} 只剩下 {@code (nutrition, saturation, canAlwaysEat)}
-     * 三个字段，没有饱和度系数，所以饱和度可以直接给出——比 1.20.1 那边省掉了反推。
+     * <p>基础营养已经由原版 {@code FoodProperties#onConsume} 按注册的真实数值加过，
+     * 这里<b>只</b>补附魔加成。26.1.2 的 {@code FoodData#eat(int, float)} 第二参仍是
+     * 「饱和度系数」（内部按 {@code 营养 × 系数 × 2} 换算），所以 1.0F 恰好对应
+     * 「加成饱食度 × 2」的饱和度。
      */
     private static void applySatiety(
-            LivingEntity entity, OreFoodDefinition definition, FoodEnchantmentLevels levels) {
+            LivingEntity entity, FoodEnchantmentLevels levels) {
         if (!(entity instanceof Player player)) {
             // 只有玩家有饥饿条；其它生物吃食物不加营养（与原版一致）。
             return;
         }
-
-        int nutrition = definition.nutrition() + FoodEnchantmentRules.satietyBonus(levels.satiety());
-        float saturation = definition.saturation() + FoodEnchantmentRules.satietyBonusSaturation(levels.satiety());
-
-        if (nutrition <= 0 && saturation <= 0.0F) {
+        int bonus = FoodEnchantmentRules.satietyBonus(levels.satiety());
+        if (bonus <= 0) {
             return;
         }
-
-        player.getFoodData().eat(new FoodProperties(nutrition, saturation, true));
+        // 加成饱和度 = bonus × 2（见 FoodEnchantmentRules.satietyBonusSaturation），
+        // 系数 1.0F 即精确；基础营养已由真实 FoodProperties 经 FoodProperties.onConsume 加过。
+        player.getFoodData().eat(bonus, 1.0F);
     }
 
     /** 施加数据包条目里声明的药水效果。 */

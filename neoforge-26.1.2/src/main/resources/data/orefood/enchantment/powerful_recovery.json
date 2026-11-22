@@ -17,5 +17,31 @@
   "anvil_cost": 2,
   "slots": [
     "any"
-  ]
+  ],
+  "effects": {
+    "orefood:food_effects": [
+      {
+        "effect": "minecraft:instant_health",
+        "duration": {
+          "base": 1,
+          "per_level": 0
+        },
+        "amplifier": {
+          "base": 0,
+          "per_level": 1
+        }
+      },
+      {
+        "effect": "minecraft:regeneration",
+        "duration": {
+          "base": 0,
+          "per_level": 100
+        },
+        "amplifier": {
+          "base": 0,
+          "per_level": 1
+        }
+      }
+    ]
+  }
 }

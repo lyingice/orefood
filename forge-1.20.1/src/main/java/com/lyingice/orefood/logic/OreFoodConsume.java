@@ -13,8 +13,9 @@ import net.minecraft.world.item.ItemStack;
  * 「吃下矿物牛排时到底发生了什么」——三件事都在这里（Forge 1.20.1）。
  *
  * <ol>
- *   <li><b>按定义加营养</b>：物品注册时的食物属性是零值（见 {@code OreFoodItems}），
- *       真正的饱食度/饱和度在这里按定义补上，并叠加「饱腹」附魔的额外饱食度；</li>
+ *   <li><b>叠加「饱腹」附魔加成</b>：基础营养与饱和度已由注册时的真实食物属性
+ *       经原版结算（{@code Player.eat} 先于 {@code LivingEntity.eat}，
+ *       见 {@code OreFoodItems}），这里只补「饱腹」附魔的额外饱食度；</li>
  *   <li><b>施加定义自带的药水效果</b>：来自数据包条目的 {@code effects} 字段；</li>
  *   <li><b>施加食物附魔效果</b>：委托给 {@link FoodEnchantmentEffects}，
  *       与提示框共用同一份计算。</li>
@@ -25,7 +26,8 @@ import net.minecraft.world.item.ItemStack;
  *   <li>{@code level.isClientSide} 在 1.20.1 是<b>字段</b>，1.21.1 起改成了方法
  *       {@code level.isClientSide()}；</li>
  *   <li>1.20.1 的 {@code FoodData#eat(int, float)} 第二个参数是<b>饱和度系数</b>
- *       （最终饱和度 = 饱食度 × 系数 × 2），不是饱和度本身，所以这里要做一次反推。</li>
+ *       （最终饱和度 = 饱食度 × 系数 × 2），不是饱和度本身；补「饱腹」加成时
+ *       系数取 1.0F，正好对应「饱食度 +bonus、饱和度 +bonus×2」。</li>
  * </ul>
  */
 public final class OreFoodConsume {
@@ -48,7 +50,7 @@ public final class OreFoodConsume {
 
         FoodEnchantmentLevels levels = FoodEnchantmentLevels.of(stack);
 
-        applySatiety(entity, definition, levels);
+        applySatiety(entity, levels);
         applyDefinitionEffects(entity, definition);
         for (MobEffectInstance effect : FoodEnchantmentEffects.effectsFor(
                 levels.recovery(), levels.adrenaline(), levels.fitness(), levels.feast())) {
@@ -57,28 +59,26 @@ public final class OreFoodConsume {
     }
 
     /**
-     * 按定义补上饱食度与饱和度，并叠加「饱腹」附魔。
+     * 只补「饱腹」附魔的加成（基础营养已由注册的真实 {@code FoodProperties}
+     * 经原版 {@code Player.eat} 结算，这里再加就会翻倍）。
      *
      * <p>{@code FoodData#eat(int foodLevel, float saturationModifier)} 里饱和度是
-     * {@code saturationLevel += foodLevel * saturationModifier * 2}，
-     * 所以想要精确的饱和度 S，系数得写成 {@code S / (foodLevel * 2)}。
+     * {@code saturationLevel += foodLevel * saturationModifier * 2}；
+     * 加成饱和度 = {@code bonus × 2}（见 {@link FoodEnchantmentRules#satietyBonusSaturation}），
+     * 所以系数写 1.0F 即精确。
      */
-    private static void applySatiety(
-            LivingEntity entity, OreFoodDefinition definition, FoodEnchantmentLevels levels) {
+    private static void applySatiety(LivingEntity entity, FoodEnchantmentLevels levels) {
         if (!(entity instanceof Player player)) {
             // 只有玩家有饥饿条；其它生物吃食物不加营养（与原版一致）。
             return;
         }
 
-        int nutrition = definition.nutrition() + FoodEnchantmentRules.satietyBonus(levels.satiety());
-        float saturation = definition.saturation() + FoodEnchantmentRules.satietyBonusSaturation(levels.satiety());
-
-        if (nutrition <= 0 && saturation <= 0.0F) {
+        int bonus = FoodEnchantmentRules.satietyBonus(levels.satiety());
+        if (bonus <= 0) {
             return;
         }
 
-        float saturationModifier = nutrition > 0 ? saturation / (nutrition * 2.0F) : 0.0F;
-        player.getFoodData().eat(nutrition, saturationModifier);
+        player.getFoodData().eat(bonus, 1.0F);
     }
 
     /** 施加数据包条目里声明的药水效果。 */

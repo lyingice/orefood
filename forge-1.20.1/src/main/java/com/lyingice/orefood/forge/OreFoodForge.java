@@ -1,14 +1,19 @@
 package com.lyingice.orefood.forge;
 
 import com.lyingice.orefood.OreFoodConstants;
+import com.lyingice.orefood.data.OreFoodDefinition;
 import com.lyingice.orefood.init.OreFoodEnchantments;
 import com.lyingice.orefood.init.OreFoodItems;
+import com.lyingice.orefood.item.OreFoodItem;
+import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.registries.RegistryObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,13 +52,69 @@ public final class OreFoodForge {
 
         // 让五种牛排出现在创造模式「食物与饮品」页。
         modEventBus.addListener(OreFoodItems::addToCreativeTab);
+        // AppleSkin 联动：事件只在客户端触发，未装 AppleSkin 时内部什么都不做。
+        modEventBus.addListener(
+                com.lyingice.orefood.client.OreFoodAppleSkinSetup::onClientSetup);
 
         // 启动自检：打印五种牛排的实际定义，以及每个附魔在三个入口上的开关状态。
         // 数值现在写在代码里（编译期就能发现笔误），这行日志主要用于
         // 「加了新口味之后确认它真的注册上、数值真的是想要的」。
         MinecraftForge.EVENT_BUS.addListener((ServerStartedEvent event) -> {
             OreFoodItems.ALL.forEach(item -> LOGGER.info("  {} -> {}", item.getId(), item.get().definition()));
+            // 食物属性自检：注册进 FoodProperties 的值必须与定义一致。
+            // 饱和度经「绝对值 → 系数」往返，容许 1e-4 的浮点误差。
+            int mismatched = 0;
+            for (RegistryObject<OreFoodItem> item : OreFoodItems.ALL) {
+                OreFoodDefinition definition = item.get().definition();
+                FoodProperties food = new ItemStack(item.get()).getFoodProperties(null);
+                if (food == null) {
+                    mismatched++;
+                    LOGGER.error(
+                            "[orefood] 食物属性自检失败：{} 没有注册食物属性（定义值 nutrition={}, saturation={}）",
+                            item.getId(), definition.nutrition(), definition.saturation());
+                    continue;
+                }
+                if (food.getNutrition() == definition.nutrition()
+                        && Math.abs(food.getNutrition() * food.getSaturationModifier() * 2.0F
+                                - definition.saturation()) <= 1.0E-4F) {
+                    continue;
+                }
+                mismatched++;
+                LOGGER.error(
+                        "[orefood] 食物属性自检失败：{} 注册值 nutrition={}, saturation={}（系数 {}），定义值 nutrition={}, saturation={}",
+                        item.getId(),
+                        food.getNutrition(),
+                        food.getNutrition() * food.getSaturationModifier() * 2.0F,
+                        food.getSaturationModifier(),
+                        definition.nutrition(),
+                        definition.saturation());
+            }
+            if (mismatched == 0) {
+                LOGGER.info("[orefood] 食物属性自检：{}/{} 与定义一致",
+                        OreFoodItems.ALL.size(), OreFoodItems.ALL.size());
+            }
             logEnchantmentEntries();
+            // 修复材料自检：每个等级用对应矿物，在铁砧里能不能修。
+            for (com.lyingice.orefood.OreFoodTable.MineralTier tier
+                    : com.lyingice.orefood.OreFoodTable.MineralTier.values()) {
+                String sampleId = tier.key() + "_beef";
+                net.minecraft.world.item.Item sampleItem =
+                        net.minecraft.core.registries.BuiltInRegistries.ITEM.get(
+                                new net.minecraft.resources.ResourceLocation(
+                                        OreFoodConstants.MOD_ID, sampleId));
+                net.minecraft.resources.ResourceLocation materialId =
+                        net.minecraft.resources.ResourceLocation.tryParse(tier.repairItemId());
+                net.minecraft.world.item.Item material = materialId == null
+                        ? null
+                        : net.minecraftforge.registries.ForgeRegistries.ITEMS.getValue(materialId);
+                net.minecraft.world.item.ItemStack sample =
+                        new net.minecraft.world.item.ItemStack(sampleItem);
+                boolean repairable = material != null && sample.isDamageableItem()
+                        && sampleItem.isValidRepairItem(sample,
+                                new net.minecraft.world.item.ItemStack(material));
+                LOGGER.info("  {} 用 {} 修复 = {}，抗火 = {}",
+                        sampleId, tier.repairItemId(), repairable, sampleItem.isFireResistant());
+            }
         });
 
         LOGGER.info("{} v{} initialized on Forge (Minecraft 1.20.1); shared package {}",

@@ -2,17 +2,23 @@ package com.lyingice.orefood.neoforge;
 
 import com.lyingice.orefood.FoodEnchantment;
 import com.lyingice.orefood.OreFoodConstants;
+import com.lyingice.orefood.data.OreFoodDefinition;
 import com.lyingice.orefood.init.OreFoodItems;
+import com.lyingice.orefood.item.OreFoodItem;
 import java.util.stream.Collectors;
 import net.minecraft.core.Registry;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.neoforged.neoforge.registries.DeferredItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,16 +49,64 @@ public final class OreFoodNeoForge {
 
     public OreFoodNeoForge(IEventBus modEventBus) {
         OreFoodItems.register(modEventBus);
+        // 附魔效果组件：让「附魔吃下去给什么效果」完全由附魔 JSON 决定。
+        com.lyingice.orefood.data.OreFoodEffects.EFFECT_COMPONENTS.register(modEventBus);
 
         // 让五种牛排出现在创造模式「食物与饮品」页。
         modEventBus.addListener(OreFoodItems::addToCreativeTab);
+        // AppleSkin 联动：事件只在客户端触发，未装 AppleSkin 时内部什么都不做。
+        modEventBus.addListener(
+                com.lyingice.orefood.client.OreFoodAppleSkinSetup::onClientSetup);
 
         // 启动自检：打印五种牛排的实际定义，以及每个附魔实际挂在哪些原版附魔标签下。
         // 数值现在写在代码里（编译期就能发现笔误），这行日志主要用于
         // 「加了新口味之后确认它真的注册上、数值真的是想要的」。
         NeoForge.EVENT_BUS.addListener((ServerStartedEvent event) -> {
-            OreFoodItems.ALL.forEach(item -> LOGGER.info("  {} -> {}", item.getId(), item.get().definition()));
+            OreFoodItems.ALL.forEach(
+                    item -> LOGGER.info("  {} -> {}", item.getId(), item.get().definition()));
+            // 食物属性自检：注册的 FoodProperties 必须与定义逐项精确相等
+            // （record 直构、第二参为绝对饱和度，因此可以 Float.compare 精确比对）。
+            int foodOk = 0;
+            for (DeferredItem<OreFoodItem> item : OreFoodItems.ALL) {
+                OreFoodDefinition def = item.get().definition();
+                FoodProperties fp = new ItemStack(item.get()).get(DataComponents.FOOD);
+                if (fp != null
+                        && fp.nutrition() == def.nutrition()
+                        && Float.compare(fp.saturation(), def.saturation()) == 0) {
+                    foodOk++;
+                } else {
+                    String registered = fp == null
+                            ? "<无>"
+                            : fp.nutrition() + "/" + fp.saturation();
+                    LOGGER.error("[orefood] 食物属性不一致：{} 注册值 {}，定义值 {}/{}",
+                            item.getId(), registered, def.nutrition(), def.saturation());
+                }
+            }
+            if (foodOk == OreFoodItems.ALL.size()) {
+                LOGGER.info("[orefood] 食物属性自检：{}/{} 与定义一致",
+                        foodOk, OreFoodItems.ALL.size());
+            }
             logEnchantmentEntries(event);
+            // 修复材料自检：每个等级用对应矿物，在铁砧里能不能修。
+            for (com.lyingice.orefood.OreFoodTable.MineralTier tier
+                    : com.lyingice.orefood.OreFoodTable.MineralTier.values()) {
+                String sampleId = tier.key() + "_beef";
+                net.minecraft.world.item.Item sampleItem =
+                        net.minecraft.core.registries.BuiltInRegistries.ITEM.get(
+                                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
+                                        OreFoodConstants.MOD_ID, sampleId));
+                net.minecraft.resources.ResourceLocation materialId =
+                        net.minecraft.resources.ResourceLocation.tryParse(tier.repairItemId());
+                net.minecraft.world.item.Item material = materialId == null
+                        ? null
+                        : net.minecraft.core.registries.BuiltInRegistries.ITEM.get(materialId);
+                net.minecraft.world.item.ItemStack sample =
+                        new net.minecraft.world.item.ItemStack(sampleItem);
+                boolean repairable = material != null && sample.isDamageableItem()
+                        && sampleItem.isValidRepairItem(sample,
+                                new net.minecraft.world.item.ItemStack(material));
+                LOGGER.info("  {} 用 {} 修复 = {}", sampleId, tier.repairItemId(), repairable);
+            }
         });
 
         LOGGER.info("{} v{} initialized on NeoForge (Minecraft 1.21.1); shared package {}",
@@ -86,7 +140,12 @@ public final class OreFoodNeoForge {
                             .sorted()
                             .collect(Collectors.joining(", ")))
                     .orElse("<NOT REGISTERED>");
-            LOGGER.info("  {} -> [{}]", spec.fullId(), tags);
+            // 食用效果来自数据包（附魔 JSON 里的 orefood:food_effects），0 条意味着数据包没加载上。
+            int foodEffects = enchantments.getHolder(key)
+                    .map(holder -> com.lyingice.orefood.data.OreFoodEffects
+                            .specsOf(holder.value()).size())
+                    .orElse(0);
+            LOGGER.info("  {} -> [{}] 食用效果 {} 条", spec.fullId(), tags, foodEffects);
         }
     }
 }

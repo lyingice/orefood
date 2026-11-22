@@ -29,13 +29,17 @@ import net.minecraft.util.ExtraCodecs;
  * @param durability       最大耐久；<b>0 表示无限耐久</b>（吃了不掉耐久）
  * @param enchantmentValue 附魔能力
  * @param effects          食用后附带的状态效果，可为空
+ * @param repairItemId     铁砧里修复用的材料 id（原版物品）；空串表示不可修复
+ * @param fireResistant    是否抗火（下界合金为 true：掉进岩浆/火里不会被烧毁）
  */
 public record OreFoodDefinition(
         int nutrition,
         float saturation,
         int durability,
         int enchantmentValue,
-        List<PotionEffectSpec> effects) {
+        List<PotionEffectSpec> effects,
+        String repairItemId,
+        boolean fireResistant) {
 
     public static final Codec<OreFoodDefinition> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("nutrition", 0).forGetter(OreFoodDefinition::nutrition),
@@ -43,7 +47,9 @@ public record OreFoodDefinition(
             ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("durability", 0).forGetter(OreFoodDefinition::durability),
             ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("enchantment_value", 0)
                     .forGetter(OreFoodDefinition::enchantmentValue),
-            PotionEffectSpec.CODEC.listOf().optionalFieldOf("effects", List.of()).forGetter(OreFoodDefinition::effects)
+            PotionEffectSpec.CODEC.listOf().optionalFieldOf("effects", List.of()).forGetter(OreFoodDefinition::effects),
+            Codec.STRING.optionalFieldOf("repair_item", "").forGetter(OreFoodDefinition::repairItemId),
+            Codec.BOOL.optionalFieldOf("fire_resistant", false).forGetter(OreFoodDefinition::fireResistant)
     ).apply(instance, OreFoodDefinition::new));
 
     /**

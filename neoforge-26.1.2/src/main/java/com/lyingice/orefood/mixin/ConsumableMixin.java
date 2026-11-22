@@ -30,6 +30,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * {@code Consumable#startConsuming} 会<b>立刻</b>调用 {@code onConsume}，
  * 而那条路径在客户端也会走。本模组的牛排是 1.6 秒的定时食用，
  * 且 {@code OreFoodConsume#onConsume} 内部已自行判端，因此不受影响。
+ *
+ * <p><b>为什么不能再注入 HEAD</b>：注册时已经写入真实的 {@code FoodProperties}，
+ * 而基础营养是在方法体内的 {@code stack.getAllOfType(ConsumableListener.class)}
+ * 阶段才加上的。若仍在 HEAD 结算「饱腹」附魔加成，它会先于基础值进入
+ * {@code FoodData#eat}——饱和度会被 clamp 到当时的 {@code foodLevel}，
+ * 接近满饱食度时结果与另外两个平台不一致。因此注入点改到
+ * {@code stack.consume(1, user)} 调用之前：此时基础营养已加、物品栈尚未被消耗，
+ * 附魔等级仍然读得到；即便这一口恰好把物品吃坏，加成也已经先结算完毕。
  */
 @Mixin(Consumable.class)
 public abstract class ConsumableMixin {
@@ -39,14 +47,21 @@ public abstract class ConsumableMixin {
                     + "Lnet/minecraft/world/item/ItemStack;)Lnet/minecraft/world/item/ItemStack;";
 
     /**
-     * 在吃下的一刻结算营养、定义自带效果与食物附魔效果。
+     * 在基础营养结算之后、物品栈被消耗之前，叠加「饱腹」附魔加成与定义自带效果。
+     *
+     * <p>注入点是 {@code Consumable#onConsume} 里唯一的 {@code ItemStack#consume} 调用
+     * （默认 shift 为 BEFORE）。选择它而不是 HEAD，是为了让
+     * {@code FoodProperties#onConsume}（{@code ConsumableListener}）先把基础营养加进去，
+     * 附魔加成再叠加——顺序影响饱和度 clamp 到 {@code foodLevel} 的结果。
      *
      * <p>{@code CallbackInfoReturnable} 参数<b>必须保留</b>，即使这里完全不使用它：
      * Mixin 会校验处理器描述符，目标方法有返回值时缺了这个参数会直接抛
      * {@code InvalidInjectionException: Invalid descriptor ...}，
      * 而且是<b>运行期</b>才炸（编译期看不出来）。
      */
-    @Inject(method = ON_CONSUME_METHOD, at = @At("HEAD"))
+    @Inject(method = ON_CONSUME_METHOD,
+            at = @At(value = "INVOKE",
+                    target = "Lnet/minecraft/world/item/ItemStack;consume(ILnet/minecraft/world/entity/LivingEntity;)V"))
     private void orefood$applyOreFoodEffects(
             Level level, LivingEntity user, ItemStack stack,
             CallbackInfoReturnable<ItemStack> callback) {

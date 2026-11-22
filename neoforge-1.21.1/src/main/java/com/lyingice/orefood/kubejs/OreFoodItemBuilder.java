@@ -6,6 +6,7 @@ import com.lyingice.orefood.item.OreFoodItem;
 import com.mojang.serialization.JsonOps;
 import dev.latvian.mods.kubejs.item.ItemBuilder;
 import java.util.List;
+import java.util.Optional;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
@@ -27,8 +28,8 @@ import net.minecraft.world.item.Item;
  *
  * <p><b>两条硬约束</b>（都在本类里强制，脚本改不动）：
  * <ul>
- *   <li><b>食物属性零值</b>：真实数值由 {@code OreFoodConsume} 在吃下时按定义加。
- *       如果这里跟着脚本写的食物属性走，营养就会翻倍；</li>
+ *   <li><b>食物属性以定义为准（覆盖脚本 .food(...)）</b>：真实数值注册进 FoodProperties，
+ *       饱腹附魔加成由食用结算补。脚本自己写的 .food(...) 会被定义值覆盖，防叠加；</li>
  *   <li><b>不可堆叠 + 可损坏</b>：带耐久的物品堆叠会让整堆共享一份耐久，
  *       而 {@code durability(1)} 只是让物品被判定为「可损坏」（真实上限由定义给出）。</li>
  * </ul>
@@ -57,26 +58,33 @@ public class OreFoodItemBuilder extends ItemBuilder {
 
     @Override
     public Item createObject() {
-        return new OreFoodItem(createItemProperties(), parseDefinition());
+        OreFoodDefinition definition = parseDefinition();
+        return new OreFoodItem(createItemProperties().food(foodProperties(definition)), definition);
     }
 
-    /** 强制零值食物、不可堆叠、可损坏；见类注释的两条硬约束。 */
+    /** 强制不可堆叠、可损坏；食物属性在 {@link #createObject()} 里按定义覆盖。 */
     @Override
     public Item.Properties createItemProperties() {
         return super.createItemProperties()
                 .stacksTo(1)
-                .durability(1)
-                .food(new FoodProperties.Builder()
-                        .nutrition(0)
-                        .saturationModifier(0.0F)
-                        .alwaysEdible()
-                        .build());
+                .durability(1);
+    }
+
+    /** 定义 → 真实食物属性（record 第二参是绝对饱和度，直构精确无换算误差）。 */
+    private static FoodProperties foodProperties(OreFoodDefinition definition) {
+        return new FoodProperties(
+                definition.nutrition(),
+                definition.saturation(),
+                true,
+                1.6F,
+                Optional.empty(),
+                List.of());
     }
 
     /** @return 解析后的定义；脚本没写 .definition(...) 时给一份零值定义。 */
     private OreFoodDefinition parseDefinition() {
         if (this.definitionJson == null || this.definitionJson.isJsonNull()) {
-            return new OreFoodDefinition(0, 0.0F, 0, 0, List.of());
+            return new OreFoodDefinition(0, 0.0F, 0, 0, List.of(), "", false);
         }
         return OreFoodDefinition.CODEC.parse(JsonOps.INSTANCE, this.definitionJson)
                 .result()
